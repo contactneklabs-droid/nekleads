@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, UserCog, MessageSquare, Settings, Menu, X } from 'lucide-react';
+import React from 'react';
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { LayoutDashboard, Users, UserCog, MessageSquare, Settings } from 'lucide-react';
 import { ToastProvider } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
 

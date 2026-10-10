@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, RefreshCw } from 'lucide-react';
 import { getCandidates, Candidate, syncQueue } from '../lib/db';

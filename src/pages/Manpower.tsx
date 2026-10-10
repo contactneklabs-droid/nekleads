@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Upload, MessageCircle, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, Upload, MessageCircle, Trash2, MoreVertical } from 'lucide-react';
 import { getCandidates, saveCandidate, deleteCandidate, Candidate } from '../lib/db';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';

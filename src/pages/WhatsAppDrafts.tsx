@@ -4,7 +4,6 @@ import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 
 const DRAFT_STORAGE_KEY = 'nek_leads_whatsapp_draft';
-const TEMPLATE_STORAGE_KEY = 'nek_leads_saved_templates';
 
 export default function WhatsAppDrafts() {
   const [formData, setFormData] = useState({

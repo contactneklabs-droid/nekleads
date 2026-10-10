@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Download, FileJson } from 'lucide-react';
+import { Upload, FileJson } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { getCandidates, saveCandidate } from '../lib/db';

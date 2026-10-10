@@ -54,7 +54,11 @@ export const updateCandidate = (id: string, updates: Partial<Candidate>): Candid
   const index = current.findIndex(c => c.id === id);
   if (index === -1) throw new Error('Not found');
   
-  const updated = { ...current[index], ...updates, syncStatus: navigator.onLine ? 'synced' : 'pending' as const };
+  const updated: Candidate = { 
+    ...current[index], 
+    ...updates, 
+    syncStatus: navigator.onLine ? 'synced' : 'pending' 
+  };
   current[index] = updated;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
   
