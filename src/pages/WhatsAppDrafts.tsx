@@ -460,50 +460,49 @@ export default function WhatsAppDrafts() {
                   />
                 </div>
                 
+                <div className="form-group">
+                  <label className="form-label">Event Date</label>
+                  <input 
+                    type="date" 
+                    name="eventDate" 
+                    value={reqData.eventDate} 
+                    onChange={e => {
+                      const updated = { ...reqData, eventDate: e.target.value };
+                      setReqData(updated);
+                      localStorage.setItem('nek_draft_requirement', JSON.stringify(updated));
+                    }} 
+                    className="input-field" 
+                  />
+                </div>
+
                 <div className="responsive-grid-inner">
                   <div className="form-group">
-                    <label className="form-label">Event Date</label>
+                    <label className="form-label">Start Time</label>
                     <input 
-                      type="date" 
-                      name="eventDate" 
-                      value={reqData.eventDate} 
+                      type="time" 
+                      name="startTime" 
+                      value={reqData.startTime} 
                       onChange={e => {
-                        const updated = { ...reqData, eventDate: e.target.value };
+                        const updated = { ...reqData, startTime: e.target.value };
                         setReqData(updated);
                         localStorage.setItem('nek_draft_requirement', JSON.stringify(updated));
                       }} 
                       className="input-field" 
                     />
                   </div>
-                  <div className="responsive-grid-inner">
-                    <div className="form-group">
-                      <label className="form-label">Start Time</label>
-                      <input 
-                        type="time" 
-                        name="startTime" 
-                        value={reqData.startTime} 
-                        onChange={e => {
-                          const updated = { ...reqData, startTime: e.target.value };
-                          setReqData(updated);
-                          localStorage.setItem('nek_draft_requirement', JSON.stringify(updated));
-                        }} 
-                        className="input-field" 
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">End Time</label>
-                      <input 
-                        type="time" 
-                        name="endTime" 
-                        value={reqData.endTime} 
-                        onChange={e => {
-                          const updated = { ...reqData, endTime: e.target.value };
-                          setReqData(updated);
-                          localStorage.setItem('nek_draft_requirement', JSON.stringify(updated));
-                        }} 
-                        className="input-field" 
-                      />
-                    </div>
+                  <div className="form-group">
+                    <label className="form-label">End Time</label>
+                    <input 
+                      type="time" 
+                      name="endTime" 
+                      value={reqData.endTime} 
+                      onChange={e => {
+                        const updated = { ...reqData, endTime: e.target.value };
+                        setReqData(updated);
+                        localStorage.setItem('nek_draft_requirement', JSON.stringify(updated));
+                      }} 
+                      className="input-field" 
+                    />
                   </div>
                 </div>
 

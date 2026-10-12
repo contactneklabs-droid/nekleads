@@ -240,13 +240,23 @@ input, select, textarea {
 
 .input-field {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 10px 14px;
   background-color: var(--color-input-bg);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   outline: none;
   transition: all 0.2s ease;
+}
+
+input[type="date"].input-field,
+input[type="time"].input-field {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .input-field:hover {

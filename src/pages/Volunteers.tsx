@@ -185,18 +185,18 @@ export default function Volunteers() {
       </div>
 
       {/* Selection Action Bar for Both Desktop & Mobile */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '8px', flexWrap: 'wrap' }}>
         <button 
           onClick={() => toggleSelectAll(filtered.map(c => c.id))}
           className="btn btn-secondary mobile-only"
-          style={{ padding: '6px 12px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
+          style={{ padding: '8px 12px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '8px', flexShrink: 0 }}
         >
           {selectedIds.size === filtered.length && filtered.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
           <span>{selectedIds.size === filtered.length && filtered.length > 0 ? 'Deselect All' : 'Select All'}</span>
         </button>
 
         {selectedIds.size > 0 && (
-          <div style={{ padding: '8px 16px', backgroundColor: 'rgba(211, 47, 47, 0.08)', border: '1px solid var(--color-danger)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flex: 1, marginLeft: '8px' }}>
+          <div style={{ padding: '8px 12px', backgroundColor: 'rgba(211, 47, 47, 0.08)', border: '1px solid var(--color-danger)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flex: 1, minWidth: '160px' }}>
             <span style={{ fontWeight: 600, color: 'var(--color-danger)', fontSize: '13px' }}>{selectedIds.size} selected</span>
             <button className="btn btn-danger" style={{ padding: '5px 10px', fontSize: '12px', borderRadius: '6px' }} onClick={handleBulkDelete}>
               <Trash2 size={13} /> Bulk Delete
@@ -293,8 +293,9 @@ export default function Volunteers() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '6px',
-                      margin: '-6px 0 -6px -4px',
+                      width: '32px',
+                      height: '32px',
+                      padding: 0,
                       flexShrink: 0,
                       cursor: 'pointer'
                     }}
