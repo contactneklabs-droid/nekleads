@@ -99,10 +99,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           )}
 
-          <div className="text-sm" style={{ color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--color-success)' }}></div>
-            Online
-          </div>
         </header>
 
         <div className="page-content" style={{ paddingBottom: isDashboard ? '40px' : 'calc(90px + env(safe-area-inset-bottom))' }}>
