@@ -5,7 +5,7 @@ import {
   UserCog, 
   MessageSquare, 
   Settings, 
-  PlusCircle, 
+  CreditCard, 
   ArrowRight, 
   RefreshCw, 
   Clock, 
@@ -96,11 +96,11 @@ export default function Dashboard() {
       badge: 'Ready'
     },
     {
-      title: 'Add New Talent',
-      meta: 'Hostess & volunteer',
-      path: '/volunteers',
-      icon: <PlusCircle size={20} strokeWidth={2} />,
-      badge: 'Create'
+      title: 'Payment Notices',
+      meta: 'Client & team payouts',
+      path: '/whatsapp-drafts',
+      icon: <CreditCard size={20} strokeWidth={2} />,
+      badge: 'Billing'
     },
     {
       title: 'Offline Sync Queue',
