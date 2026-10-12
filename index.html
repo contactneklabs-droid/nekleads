@@ -15,8 +15,49 @@
     <title>NEK LEADS</title>
   </head>
   <body>
-    <div id="splash-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #FFFFFF; color: #000000; z-index: 99999; display: flex; flex-direction: column; justify-content: space-between; padding: 48px 32px calc(48px + env(safe-area-inset-bottom)) 32px; box-sizing: border-box; overflow: hidden; font-family: 'Inter', -apple-system, sans-serif; transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s ease;">
+    <div id="splash-screen" class="splash-container">
       <style>
+        :root {
+          --splash-bg: #FFFFFF;
+          --splash-text: #000000;
+          --splash-sub: #777777;
+          --splash-pill-bg: #000000;
+          --splash-pill-text: #FFFFFF;
+          --splash-line: #000000;
+          --splash-border: #000000;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --splash-bg: #000000;
+            --splash-text: #FFFFFF;
+            --splash-sub: #888888;
+            --splash-pill-bg: #FFFFFF;
+            --splash-pill-text: #000000;
+            --splash-line: #FFFFFF;
+            --splash-border: #FFFFFF;
+          }
+        }
+
+        .splash-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: var(--splash-bg);
+          color: var(--splash-text);
+          z-index: 99999;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 48px 32px calc(48px + env(safe-area-inset-bottom)) 32px;
+          box-sizing: border-box;
+          overflow: hidden;
+          font-family: 'Inter', -apple-system, sans-serif;
+          transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s ease;
+        }
+
         @keyframes fadeInSlideUp {
           0% { opacity: 0; transform: translateY(18px); }
           100% { opacity: 1; transform: translateY(0); }
@@ -33,6 +74,7 @@
           0% { transform: scaleX(0); }
           100% { transform: scaleX(1); }
         }
+
         .splash-top-section {
           animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           display: flex;
@@ -59,7 +101,7 @@
           font-weight: 900;
           line-height: 0.88;
           letter-spacing: -2px;
-          color: #000000;
+          color: var(--splash-text);
           margin: 0;
           padding: 0;
           text-transform: none;
@@ -72,13 +114,13 @@
         .splash-meta-label {
           font-size: 11px;
           font-weight: 500;
-          color: #888888;
+          color: var(--splash-sub);
           letter-spacing: 0.2px;
         }
         .splash-meta-val {
           font-size: 13px;
           font-weight: 600;
-          color: #000000;
+          color: var(--splash-text);
           letter-spacing: -0.2px;
         }
         .splash-badge {
@@ -86,8 +128,8 @@
           align-items: center;
           gap: 6px;
           padding: 3px 8px;
-          background: #000000;
-          color: #FFFFFF;
+          background: var(--splash-pill-bg);
+          color: var(--splash-pill-text);
           border-radius: 999px;
           font-size: 10px;
           font-weight: 600;
@@ -98,13 +140,13 @@
           width: 5px;
           height: 5px;
           border-radius: 50%;
-          background: #FFFFFF;
+          background: var(--splash-pill-text);
           animation: subtlePulse 1.4s ease-in-out infinite;
         }
         .splash-progress-line {
           width: 100%;
           height: 2px;
-          background: #000000;
+          background: var(--splash-line);
           transform-origin: left;
           animation: lineExpand 1.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
           margin-top: 16px;
@@ -117,7 +159,7 @@
           <div class="splash-dot"></div>
           <span>NEK OS</span>
         </div>
-        <div style="font-size: 12px; font-weight: 500; color: #777777; letter-spacing: 0.5px;">
+        <div style="font-size: 12px; font-weight: 500; color: var(--splash-sub); letter-spacing: 0.5px;">
           PWA &bull; v1.0
         </div>
       </div>
@@ -130,8 +172,8 @@
         <div class="splash-bottom-meta">
           <div class="splash-meta-block">
             <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-              <span style="font-size: 11px; font-weight: 700; color: #000000;">NEK LEADS</span>
-              <span style="font-size: 10px; padding: 1px 6px; border: 1px solid #000000; border-radius: 12px; font-weight: 600;">PWA</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--splash-text);">NEK LEADS</span>
+              <span style="font-size: 10px; padding: 1px 6px; border: 1px solid var(--splash-border); border-radius: 12px; font-weight: 600; color: var(--splash-text);">PWA</span>
             </div>
             <div class="splash-meta-label">Event & Manpower Desk</div>
           </div>
