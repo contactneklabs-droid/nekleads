@@ -8,8 +8,6 @@ import {
   CreditCard, 
   ArrowRight, 
   RefreshCw, 
-  Clock, 
-  Sparkles,
   Database
 } from 'lucide-react';
 import { getCandidates, Candidate, syncQueue } from '../lib/db';
@@ -122,15 +120,15 @@ export default function Dashboard() {
   return (
     <div style={{ maxWidth: '880px', margin: '0 auto' }}>
       
-      {/* 1. TOP GREETING HERO CARD (Exact layout as Reference Mockup) */}
+      {/* 1. TOP GREETING HERO CARD (Exact layout as Reference Mockup with Typographic Styling) */}
       <div className="bento-hero-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
           <div>
             <h1 style={{ 
               fontFamily: "'Outfit', sans-serif", 
               fontSize: '28px', 
               fontWeight: 800, 
-              letterSpacing: '-0.5px',
+              letterSpacing: '-0.8px',
               color: 'var(--color-text-primary)',
               lineHeight: 1.15
             }}>
@@ -138,36 +136,51 @@ export default function Dashboard() {
             </h1>
             <p style={{ 
               color: 'var(--color-text-secondary)', 
-              fontSize: '17px', 
-              fontWeight: 500,
+              fontSize: '16px', 
+              fontWeight: 400,
               marginTop: '6px',
-              letterSpacing: '-0.2px'
+              letterSpacing: '-0.2px',
+              lineHeight: 1.3
             }}>
               here are your lead sections for today.
             </p>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              padding: '6px 12px', 
-              borderRadius: '20px', 
-              backgroundColor: 'var(--color-bg-primary)', 
-              border: '1px solid var(--color-border)', 
+          {/* Editorial Typographic Stamp (replaces icon badge) */}
+          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0, paddingTop: '4px' }}>
+            <div style={{ 
+              fontFamily: "'Outfit', sans-serif", 
               fontSize: '12px', 
-              fontWeight: 600,
-              color: 'var(--color-text-primary)'
+              fontWeight: 800, 
+              letterSpacing: '2.5px', 
+              textTransform: 'uppercase', 
+              color: 'var(--color-text-primary)',
+              lineHeight: 1
             }}>
-              <Sparkles size={14} /> NEK OS
-            </span>
+              NEK·OS
+            </div>
+            <div style={{ 
+              fontFamily: "'Inter', sans-serif", 
+              fontSize: '10px', 
+              fontWeight: 500, 
+              letterSpacing: '1.2px', 
+              textTransform: 'uppercase', 
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.2
+            }}>
+              EDITION 2026.4
+            </div>
           </div>
         </div>
 
-        {/* Time Pill Badge */}
-        <div className="bento-time-pill">
-          <Clock size={12} />
+        {/* Clean Typographic Time Chip */}
+        <div className="bento-time-pill" style={{ 
+          fontFamily: "'Outfit', sans-serif", 
+          fontSize: '12px', 
+          fontWeight: 700, 
+          letterSpacing: '0.8px', 
+          fontVariantNumeric: 'tabular-nums'
+        }}>
           <span>{currentTimeStr || '6:15 AM'}</span>
         </div>
       </div>
