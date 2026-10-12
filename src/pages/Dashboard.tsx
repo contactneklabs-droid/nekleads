@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, RefreshCw } from 'lucide-react';
+import { 
+  Users, 
+  UserCog, 
+  MessageSquare, 
+  Settings, 
+  PlusCircle, 
+  ArrowRight, 
+  RefreshCw, 
+  Clock, 
+  Sparkles,
+  Database
+} from 'lucide-react';
 import { getCandidates, Candidate, syncQueue } from '../lib/db';
 import { useToast } from '../contexts/ToastContext';
 
@@ -10,24 +21,27 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ talent: 0, manpower: 0, pendingSync: 0 });
   const [recent, setRecent] = useState<Candidate[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentTimeStr, setCurrentTimeStr] = useState('');
 
   useEffect(() => {
-    // Artificial delay for premium skeleton loading effect
-    const timer = setTimeout(() => {
-      const data = getCandidates();
-      const talentCount = data.filter(c => c.type === 'Hostess' || c.type === 'Volunteer').length;
-      const manpowerCount = data.length - talentCount;
-      
-      const queue = JSON.parse(localStorage.getItem('nek_leads_offline_queue') || '[]');
-      setStats({ talent: talentCount, manpower: manpowerCount, pendingSync: queue.length });
-      
-      const sorted = [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setRecent(sorted.slice(0, 10)); // Expanded from 5 to 10
-      setIsLoading(false);
-    }, 600);
+    const data = getCandidates();
+    const talentCount = data.filter(c => c.type === 'Hostess' || c.type === 'Volunteer').length;
+    const manpowerCount = data.length - talentCount;
+    
+    const queue = JSON.parse(localStorage.getItem('nek_leads_offline_queue') || '[]');
+    setStats({ talent: talentCount, manpower: manpowerCount, pendingSync: queue.length });
+    
+    const sorted = [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setRecent(sorted.slice(0, 5));
 
-    return () => clearTimeout(timer);
+    // Update real clock time
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTimeStr(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleSync = async () => {
@@ -35,13 +49,13 @@ export default function Dashboard() {
     try {
       const result = await syncQueue();
       if (result.success) {
-        addToast('success', `Successfully synchronized ${result.syncedCount} offline actions.`);
+        addToast('success', `Synced ${result.syncedCount} offline updates.`);
         setStats(prev => ({ ...prev, pendingSync: 0 }));
       } else {
-        addToast('error', 'Cannot sync: You are currently offline.');
+        addToast('error', 'Sync unavailable in offline mode.');
       }
-    } catch (e) {
-      addToast('error', 'Sync failed. Please try again.');
+    } catch {
+      addToast('error', 'Sync failed. Try again.');
     } finally {
       setIsSyncing(false);
     }
@@ -49,118 +63,240 @@ export default function Dashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return 'Good morning!';
+    if (hour < 18) return 'Good afternoon!';
+    return 'Good evening!';
   };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  // 6 Bento Grid Sections matching the layout from the user reference
+  const bentoSections = [
+    {
+      title: 'Talent Directory',
+      meta: `${stats.talent} registered`,
+      path: '/volunteers',
+      icon: <Users size={20} strokeWidth={2} />,
+      badge: 'Active'
+    },
+    {
+      title: 'Manpower Staff',
+      meta: `${stats.manpower} staff members`,
+      path: '/manpower',
+      icon: <UserCog size={20} strokeWidth={2} />,
+      badge: 'Staff'
+    },
+    {
+      title: 'WhatsApp Drafts',
+      meta: 'Event announcer',
+      path: '/whatsapp-drafts',
+      icon: <MessageSquare size={20} strokeWidth={2} />,
+      badge: 'Ready'
+    },
+    {
+      title: 'Add New Talent',
+      meta: 'Hostess & volunteer',
+      path: '/volunteers',
+      icon: <PlusCircle size={20} strokeWidth={2} />,
+      badge: 'Create'
+    },
+    {
+      title: 'Offline Sync Queue',
+      meta: `${stats.pendingSync} pending tasks`,
+      path: '#sync',
+      onClick: handleSync,
+      icon: <RefreshCw size={20} strokeWidth={2} className={isSyncing ? "animate-spin" : ""} />,
+      badge: stats.pendingSync > 0 ? `${stats.pendingSync} Pending` : 'Up to date'
+    },
+    {
+      title: 'System Settings',
+      meta: 'Backups & exports',
+      path: '/settings',
+      icon: <Settings size={20} strokeWidth={2} />,
+      badge: 'Config'
+    }
+  ];
+
   return (
-    <div>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 className={`page-title ${isLoading ? 'skeleton' : ''}`} style={{ marginBottom: '4px', fontSize: '28px', width: isLoading ? '60%' : 'auto' }}>
-          {isLoading ? 'Loading...' : getGreeting()}
-        </h1>
-        <p className={isLoading ? 'skeleton' : ''} style={{ color: 'var(--color-text-secondary)', fontSize: '15px', width: isLoading ? '40%' : 'auto' }}>
-          {isLoading ? 'Please wait' : "Here is what's happening today."}
-        </p>
-      </div>
+    <div style={{ maxWidth: '880px', margin: '0 auto' }}>
       
-      <div className="dashboard-stats">
-        <div className={isLoading ? 'skeleton' : ''} style={{ padding: '20px', border: '1px solid var(--color-border)', borderRadius: '12px', backgroundColor: 'var(--color-bg-primary)', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontWeight: 600 }}>
-            Talent
+      {/* 1. TOP GREETING HERO CARD (Exact layout as Reference Mockup) */}
+      <div className="bento-hero-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ 
+              fontFamily: "'Outfit', sans-serif", 
+              fontSize: '28px', 
+              fontWeight: 800, 
+              letterSpacing: '-0.5px',
+              color: 'var(--color-text-primary)',
+              lineHeight: 1.15
+            }}>
+              {getGreeting()}
+            </h1>
+            <p style={{ 
+              color: 'var(--color-text-secondary)', 
+              fontSize: '17px', 
+              fontWeight: 500,
+              marginTop: '6px',
+              letterSpacing: '-0.2px'
+            }}>
+              here are your lead sections for today.
+            </p>
           </div>
-          <div className="font-display" style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-1.5px' }}>{stats.talent}</div>
-        </div>
-        
-        <div className={isLoading ? 'skeleton' : ''} style={{ padding: '20px', border: '1px solid var(--color-border)', borderRadius: '12px', backgroundColor: 'var(--color-bg-primary)', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontWeight: 600 }}>
-            Manpower
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              padding: '6px 12px', 
+              borderRadius: '20px', 
+              backgroundColor: 'var(--color-bg-primary)', 
+              border: '1px solid var(--color-border)', 
+              fontSize: '12px', 
+              fontWeight: 600,
+              color: 'var(--color-text-primary)'
+            }}>
+              <Sparkles size={14} /> NEK OS
+            </span>
           </div>
-          <div className="font-display" style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-1.5px' }}>{stats.manpower}</div>
         </div>
 
-        {stats.pendingSync > 0 && !isLoading && (
-          <div style={{ padding: '20px', border: '1px solid var(--color-danger)', borderRadius: '12px', backgroundColor: 'rgba(211, 47, 47, 0.05)', boxShadow: 'var(--shadow-sm)', gridColumn: '1 / -1' }}>
-            <div className="flex justify-between items-center">
-              <div>
-                <div style={{ color: 'var(--color-danger)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', fontWeight: 600 }}>
-                  Offline Queue
+        {/* Time Pill Badge */}
+        <div className="bento-time-pill">
+          <Clock size={12} />
+          <span>{currentTimeStr || '6:15 AM'}</span>
+        </div>
+      </div>
+
+      {/* 2. BENTO NAVIGATION GRID (3x2 Desktop, 2x3 Mobile) */}
+      <div className="bento-grid">
+        {bentoSections.map((item, idx) => (
+          <div
+            key={idx}
+            className="bento-card"
+            onClick={() => {
+              if (item.onClick) {
+                item.onClick();
+              } else {
+                navigate(item.path);
+              }
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="bento-icon-wrapper">
+                  {item.icon}
                 </div>
-                <div className="font-display" style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-danger)', letterSpacing: '-1px' }}>
-                  {stats.pendingSync} <span style={{ fontSize: '16px', fontWeight: 500, letterSpacing: '0' }}>pending</span>
-                </div>
+                <span style={{ 
+                  fontSize: '10px', 
+                  fontWeight: 600, 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.5px',
+                  color: 'var(--color-text-secondary)',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--color-bg-primary)',
+                  border: '1px solid var(--color-border)'
+                }}>
+                  {item.badge}
+                </span>
               </div>
-              <button className="btn btn-primary" onClick={handleSync} disabled={isSyncing} style={{ padding: '8px 16px', borderRadius: '8px' }}>
-                <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} /> Sync
-              </button>
+            </div>
+
+            <div>
+              <div className="bento-card-title">{item.title}</div>
+              <div className="bento-card-meta">{item.meta}</div>
             </div>
           </div>
-        )}
+        ))}
       </div>
 
-      <div style={{ marginTop: '32px' }}>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className={isLoading ? 'skeleton' : ''} style={{ fontSize: '16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-secondary)' }}>
-            Activity Timeline
-          </h2>
-          {!isLoading && (
-            <button 
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
-              onClick={() => navigate('/volunteers')}
-            >
-              View All <ArrowRight size={14} />
-            </button>
-          )}
+      {/* 3. RECENT ACTIVITY TIMELINE */}
+      <div style={{ marginTop: '12px', paddingBottom: '32px' }}>
+        <div className="flex justify-between items-center mb-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Database size={16} color="var(--color-text-secondary)" />
+            <h2 style={{ fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--color-text-secondary)' }}>
+              Recent Entries
+            </h2>
+          </div>
+          <button 
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+            onClick={() => navigate('/volunteers')}
+          >
+            View Directory <ArrowRight size={14} />
+          </button>
         </div>
-        
-        <div style={{ backgroundColor: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: '12px', overflow: 'hidden', padding: '8px 0' }}>
-          {isLoading ? (
-            // Skeleton Timeline items
-            [1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="recent-list-item" style={{ border: 'none', position: 'relative' }}>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', width: '100%' }}>
-                  <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0 }}></div>
-                  <div style={{ flex: 1 }}>
-                    <div className="skeleton" style={{ height: '16px', width: '60%', marginBottom: '8px' }}></div>
-                    <div className="skeleton" style={{ height: '12px', width: '40%' }}></div>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : recent.length === 0 ? (
+
+        <div style={{ backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '20px', overflow: 'hidden', padding: '6px' }}>
+          {recent.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-              No recent activity found.
+              No recent candidate records found.
             </div>
           ) : (
-            recent.map((c, index) => (
-              <div key={c.id} className="recent-list-item" style={{ border: 'none', position: 'relative' }}>
-                {index !== recent.length - 1 && (
-                  <div style={{ position: 'absolute', left: '35px', top: '48px', bottom: '-16px', width: '2px', backgroundColor: 'var(--color-border)', zIndex: 0 }}></div>
-                )}
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', zIndex: 1, position: 'relative', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)', fontWeight: 600, fontSize: '14px', flexShrink: 0, border: '2px solid var(--color-bg-primary)' }}>
+            recent.map((c) => (
+              <div 
+                key={c.id} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  padding: '12px 16px', 
+                  borderBottom: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg-primary)',
+                  borderRadius: '14px',
+                  margin: '4px',
+                  transition: 'background-color 0.15s ease'
+                }}
+              >
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    width: '36px', 
+                    height: '36px', 
+                    borderRadius: '50%', 
+                    backgroundColor: 'var(--color-bg-secondary)', 
+                    color: 'var(--color-text-primary)', 
+                    fontWeight: 700, 
+                    fontSize: '13px', 
+                    flexShrink: 0, 
+                    border: '1px solid var(--color-border)' 
+                  }}>
                     {getInitials(c.name)}
                   </div>
-                  <div style={{ flex: 1, paddingBottom: '4px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--color-text-primary)' }}>{c.name}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>{c.type} • {c.location}</span>
-                      <span style={{ fontWeight: 500 }}>
-                        {new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                      </span>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--color-text-primary)' }}>{c.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                      {c.type} &bull; {c.location}
                     </div>
                   </div>
                 </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 600, 
+                    padding: '3px 8px', 
+                    borderRadius: '12px', 
+                    backgroundColor: 'var(--color-bg-secondary)', 
+                    border: '1px solid var(--color-border)',
+                    color: 'var(--color-text-secondary)'
+                  }}>
+                    {new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
               </div>
             ))
           )}
         </div>
       </div>
+
     </div>
   );
 }
