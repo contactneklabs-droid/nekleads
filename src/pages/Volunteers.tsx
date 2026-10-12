@@ -184,14 +184,26 @@ export default function Volunteers() {
         </select>
       </div>
 
-      {selectedIds.size > 0 && (
-        <div style={{ padding: '12px 16px', backgroundColor: 'rgba(211, 47, 47, 0.1)', border: '1px solid var(--color-danger)', borderRadius: '8px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 600, color: 'var(--color-danger)' }}>{selectedIds.size} selected</span>
-          <button className="btn btn-danger" style={{ padding: '6px 12px' }} onClick={handleBulkDelete}>
-            <Trash2 size={14} /> Bulk Delete
-          </button>
-        </div>
-      )}
+      {/* Selection Action Bar for Both Desktop & Mobile */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <button 
+          onClick={() => toggleSelectAll(filtered.map(c => c.id))}
+          className="btn btn-secondary mobile-only"
+          style={{ padding: '6px 12px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
+        >
+          {selectedIds.size === filtered.length && filtered.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
+          <span>{selectedIds.size === filtered.length && filtered.length > 0 ? 'Deselect All' : 'Select All'}</span>
+        </button>
+
+        {selectedIds.size > 0 && (
+          <div style={{ padding: '8px 16px', backgroundColor: 'rgba(211, 47, 47, 0.08)', border: '1px solid var(--color-danger)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flex: 1, marginLeft: '8px' }}>
+            <span style={{ fontWeight: 600, color: 'var(--color-danger)', fontSize: '13px' }}>{selectedIds.size} selected</span>
+            <button className="btn btn-danger" style={{ padding: '5px 10px', fontSize: '12px', borderRadius: '6px' }} onClick={handleBulkDelete}>
+              <Trash2 size={13} /> Bulk Delete
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* DESKTOP TABLE VIEW */}
       <div className="table-container desktop-only">
@@ -252,9 +264,9 @@ export default function Volunteers() {
       </div>
 
       {/* MOBILE CARD VIEW */}
-      <div className="mobile-only" style={{ flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+      <div className="mobile-only" style={{ flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
         {paginatedData.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px', backgroundColor: 'var(--color-bg-primary)' }}>
+          <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)', borderRadius: '16px', backgroundColor: 'var(--color-bg-primary)' }}>
             No candidates found
           </div>
         ) : (
@@ -262,39 +274,80 @@ export default function Volunteers() {
             <div key={c.id} style={{ 
               backgroundColor: 'var(--color-bg-primary)', 
               border: `1px solid ${selectedIds.has(c.id) ? 'var(--color-primary)' : 'var(--color-border)'}`, 
-              borderRadius: '12px', 
+              borderRadius: '16px', 
               padding: '16px',
               position: 'relative',
-              boxShadow: 'var(--shadow-sm)'
+              boxShadow: 'var(--shadow-sm)',
+              boxSizing: 'border-box'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <button onClick={() => toggleSelect(c.id)} style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', display: 'flex' }}>
-                    {selectedIds.has(c.id) ? <CheckSquare size={18} className="text-primary" /> : <Square size={18} />}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                  {/* Robust Checkbox with guaranteed minimum width & touch target */}
+                  <button 
+                    onClick={() => toggleSelect(c.id)} 
+                    aria-label={`Select candidate ${c.name}`}
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: selectedIds.has(c.id) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', 
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '6px',
+                      margin: '-6px 0 -6px -4px',
+                      flexShrink: 0,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {selectedIds.has(c.id) ? <CheckSquare size={20} className="text-primary" /> : <Square size={20} />}
                   </button>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: 'var(--color-bg-primary)', fontWeight: 600, fontSize: '14px', flexShrink: 0 }}>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    width: '38px', 
+                    height: '38px', 
+                    borderRadius: '50%', 
+                    backgroundColor: 'var(--color-primary)', 
+                    color: 'var(--color-bg-primary)', 
+                    fontWeight: 700, 
+                    fontSize: '13px', 
+                    flexShrink: 0 
+                  }}>
                     {getInitials(c.name)}
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '16px', color: 'var(--color-text-primary)', marginBottom: '2px' }}>{c.name}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{c.phone}</div>
+
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {c.name}
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '1px' }}>
+                      {c.phone}
+                    </div>
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <button onClick={() => openWhatsApp(c.phone)} style={{ background: 'none', border: 'none', color: 'var(--color-success)', padding: '4px' }}>
+                {/* Right Action Icons */}
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
+                  <button 
+                    onClick={() => openWhatsApp(c.phone)} 
+                    aria-label={`WhatsApp ${c.name}`}
+                    style={{ background: 'none', border: 'none', color: '#25D366', padding: '6px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                  >
                     <MessageCircle size={20} />
                   </button>
                   <div style={{ position: 'relative' }}>
                     <button 
                       onClick={() => setOpenMenuId(openMenuId === c.id ? null : c.id)}
-                      style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', padding: '4px' }}
+                      aria-label="More options"
+                      style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', padding: '6px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
                     >
                       <MoreVertical size={20} />
                     </button>
                     {openMenuId === c.id && (
-                      <div style={{ position: 'absolute', right: 0, top: '30px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '8px', boxShadow: 'var(--shadow-md)', zIndex: 10, minWidth: '120px', overflow: 'hidden' }}>
-                        <button onClick={() => handleDelete(c.id)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--color-danger)', fontSize: '14px', textAlign: 'left' }}>
+                      <div style={{ position: 'absolute', right: 0, top: '34px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '10px', boxShadow: 'var(--shadow-md)', zIndex: 50, minWidth: '130px', overflow: 'hidden' }}>
+                        <button onClick={() => handleDelete(c.id)} style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: 'var(--color-danger)', fontSize: '13px', fontWeight: 600, textAlign: 'left', cursor: 'pointer' }}>
                           <Trash2 size={16} /> Delete
                         </button>
                       </div>
@@ -303,16 +356,17 @@ export default function Volunteers() {
                 </div>
               </div>
               
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingLeft: '30px' }}>
-                <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', fontWeight: 500 }}>
+              {/* Badges container with clean margins */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
+                <span style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '11px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                   {c.type}
                 </span>
                 {c.gender && (
-                  <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
+                  <span style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '11px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
                     {c.gender}
                   </span>
                 )}
-                <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                <span style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '11px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
                   📍 {c.location}
                 </span>
               </div>
