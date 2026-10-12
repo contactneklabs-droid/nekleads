@@ -93,9 +93,9 @@ const App = () => {
       if (splash) {
         splash.style.opacity = '0';
         splash.style.visibility = 'hidden';
-        setTimeout(() => splash.remove(), 500); // Remove from DOM after transition
+        setTimeout(() => splash.remove(), 600); // Remove from DOM after smooth transition
       }
-    }, 1200); // Show splash for 1.2 seconds
+    }, 1800); // 1.8 seconds for editorial brand animation
     return () => clearTimeout(timer);
   }, []);
 

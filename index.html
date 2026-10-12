@@ -15,44 +15,144 @@
     <title>NEK LEADS</title>
   </head>
   <body>
-    <div id="splash-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000000; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease-out, visibility 0.5s ease-out;">
+    <div id="splash-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #FFFFFF; color: #000000; z-index: 99999; display: flex; flex-direction: column; justify-content: space-between; padding: 48px 32px calc(48px + env(safe-area-inset-bottom)) 32px; box-sizing: border-box; overflow: hidden; font-family: 'Inter', -apple-system, sans-serif; transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s ease;">
       <style>
-        .splash-logo {
-          font-family: 'Outfit', sans-serif;
-          font-size: 42px;
-          font-weight: 800;
-          letter-spacing: 2px;
-          color: #ffffff;
+        @keyframes fadeInSlideUp {
+          0% { opacity: 0; transform: translateY(18px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes heroReveal {
+          0% { opacity: 0; transform: translateY(40px) scale(0.96); letter-spacing: -4px; }
+          100% { opacity: 1; transform: translateY(0) scale(1); letter-spacing: -2px; }
+        }
+        @keyframes subtlePulse {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.75; }
+        }
+        @keyframes lineExpand {
+          0% { transform: scaleX(0); }
+          100% { transform: scaleX(1); }
+        }
+        .splash-top-section {
+          animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           display: flex;
-          align-items: baseline;
-          gap: 6px;
-          animation: pulse 1.5s ease-in-out infinite;
+          justify-content: space-between;
+          align-items: flex-start;
+          width: 100%;
         }
-        .splash-sub {
-          font-size: 18px;
+        .splash-bottom-meta {
+          animation: fadeInSlideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+        .splash-title-wrapper {
+          animation: heroReveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+          width: 100%;
+        }
+        .splash-title-text {
+          font-family: 'Outfit', sans-serif;
+          font-size: clamp(68px, 18vw, 132px);
+          font-weight: 900;
+          line-height: 0.88;
+          letter-spacing: -2px;
+          color: #000000;
+          margin: 0;
+          padding: 0;
+          text-transform: none;
+        }
+        .splash-meta-block {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .splash-meta-label {
+          font-size: 11px;
           font-weight: 500;
-          letter-spacing: 4px;
           color: #888888;
+          letter-spacing: 0.2px;
         }
-        .splash-spinner {
-          width: 32px;
-          height: 32px;
-          border: 3px solid rgba(255, 255, 255, 0.1);
+        .splash-meta-val {
+          font-size: 13px;
+          font-weight: 600;
+          color: #000000;
+          letter-spacing: -0.2px;
+        }
+        .splash-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 3px 8px;
+          background: #000000;
+          color: #FFFFFF;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.4px;
+          text-transform: uppercase;
+        }
+        .splash-dot {
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
-          border-top-color: #ffffff;
-          animation: spin 1s ease-in-out infinite;
-          margin-top: 40px;
+          background: #FFFFFF;
+          animation: subtlePulse 1.4s ease-in-out infinite;
         }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(0.98); }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
+        .splash-progress-line {
+          width: 100%;
+          height: 2px;
+          background: #000000;
+          transform-origin: left;
+          animation: lineExpand 1.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+          margin-top: 16px;
         }
       </style>
-      <div class="splash-logo">NEK. <span class="splash-sub">LEADS</span></div>
-      <div class="splash-spinner"></div>
+
+      <!-- Top minimal status indicator -->
+      <div class="splash-top-section">
+        <div class="splash-badge">
+          <div class="splash-dot"></div>
+          <span>NEK OS</span>
+        </div>
+        <div style="font-size: 12px; font-weight: 500; color: #777777; letter-spacing: 0.5px;">
+          PWA &bull; v1.0
+        </div>
+      </div>
+
+      <!-- Center graphic spacer -->
+      <div style="flex: 1; min-height: 40px;"></div>
+
+      <!-- Bottom section matching the reference mockup -->
+      <div style="width: 100%; display: flex; flex-direction: column;">
+        <div class="splash-bottom-meta">
+          <div class="splash-meta-block">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+              <span style="font-size: 11px; font-weight: 700; color: #000000;">NEK LEADS</span>
+              <span style="font-size: 10px; padding: 1px 6px; border: 1px solid #000000; border-radius: 12px; font-weight: 600;">PWA</span>
+            </div>
+            <div class="splash-meta-label">Event & Manpower Desk</div>
+          </div>
+
+          <div class="splash-meta-block">
+            <div class="splash-meta-label">Production Year</div>
+            <div class="splash-meta-val">2026.1</div>
+          </div>
+
+          <div class="splash-meta-block" style="text-align: right;">
+            <div class="splash-meta-label">Crafted for</div>
+            <div class="splash-meta-val">NEK Labs</div>
+          </div>
+        </div>
+
+        <!-- Massive oversized Hero Display Typography (like 'Studio') -->
+        <div class="splash-title-wrapper">
+          <h1 class="splash-title-text">Studio</h1>
+          <div class="splash-progress-line"></div>
+        </div>
+      </div>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
