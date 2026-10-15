@@ -38,8 +38,12 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     <DialogContext.Provider value={{ confirm }}>
       {children}
       {dialogState.isOpen && dialogState.options && (
-        <div className="modal-overlay" onKeyDown={(e) => { if(e.key === 'Escape' && !dialogState.options?.destructive) handleClose(false); }}>
-          <div className="modal-content" role="dialog" aria-modal="true">
+        <div 
+          className="modal-overlay" 
+          onClick={(e) => { if (e.target === e.currentTarget && !dialogState.options?.destructive) handleClose(false); }}
+          onKeyDown={(e) => { if (e.key === 'Escape' && !dialogState.options?.destructive) handleClose(false); }}
+        >
+          <div className="modal-content" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <h2 className="page-title" style={{ marginBottom: '12px' }}>{dialogState.options.title}</h2>
             <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
               {dialogState.options.description}

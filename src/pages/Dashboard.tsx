@@ -80,11 +80,11 @@ export default function Dashboard() {
       badge: 'Active'
     },
     {
-      title: 'Manpower Staff',
-      meta: `${stats.manpower} staff members`,
+      title: 'Manpowers',
+      meta: `${stats.manpower} registered`,
       path: '/manpower',
       icon: <UserCog size={20} strokeWidth={2} />,
-      badge: 'Staff'
+      badge: 'Active'
     },
     {
       title: 'WhatsApp Drafts',

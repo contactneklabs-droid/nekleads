@@ -43,10 +43,12 @@
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 html, body {
   overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -59,9 +61,10 @@ body {
   user-select: none;
 }
 
-input, textarea, select {
-  -webkit-user-select: auto;
-  user-select: auto;
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 .font-display {
@@ -181,11 +184,18 @@ input, select, textarea {
   justify-content: center;
   gap: 8px;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.15s ease;
   border: 1px solid transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn:active {
+  transform: scale(0.965) !important;
+  transition: transform 0.1s cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
 
 .btn-primary {
@@ -197,10 +207,6 @@ input, select, textarea {
 .btn-primary:hover {
   opacity: 0.9;
   transform: translateY(-1px);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
 }
 
 .btn-secondary {
@@ -326,25 +332,50 @@ tr:hover td {
 }
 
 /* Modals & Toasts */
+body.modal-open {
+  overflow: hidden !important;
+  touch-action: none !important;
+}
+
+body.modal-open .app-container,
+body.modal-open .main-content,
+body.modal-open .page-content {
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+body.modal-open .modal-overlay {
+  pointer-events: auto !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(2px);
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
+  touch-action: none;
+  overscroll-behavior: contain;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .modal-content {
   background-color: var(--color-modal-bg);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 16px;
   width: 100%;
   max-width: 480px;
-  padding: 32px;
+  padding: 28px;
   box-shadow: var(--shadow-md);
+  touch-action: auto;
+  overscroll-behavior: contain;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 
 .modal-header {
@@ -472,7 +503,9 @@ tr:hover td {
 }
 
 .bento-card:active {
-  transform: scale(0.98);
+  transform: scale(0.965) !important;
+  opacity: 0.92;
+  transition: transform 0.1s cubic-bezier(0.32, 0.72, 0, 1) !important;
 }
 
 .bento-icon-wrapper {
@@ -611,10 +644,19 @@ tr:hover td {
 
   .bottom-nav-link svg {
     margin-bottom: 2px;
+    transition: transform 0.1s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .bottom-nav-link:active svg {
+    transform: scale(0.82);
   }
 
   .topbar {
-    padding: 0 16px;
+    height: calc(56px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
+    padding-bottom: 0;
     justify-content: space-between;
   }
 
@@ -629,10 +671,46 @@ tr:hover td {
     gap: 16px !important;
   }
 
+  @keyframes iosBottomSheetSlideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0.9;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
   .modal-content {
-    margin: 16px;
-    width: calc(100% - 32px);
-    padding: 24px;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 24px 24px 0 0 !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    padding: 24px 20px calc(32px + env(safe-area-inset-bottom)) 20px !important;
+    max-height: 90dvh !important;
+    animation: iosBottomSheetSlideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    position: relative;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.28) !important;
+  }
+
+  /* iOS Sheet Drag Handle Pill */
+  .modal-content::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    border-radius: 999px;
+    background-color: var(--color-border);
+    margin: -10px auto 18px auto;
   }
 
   .toast-container {

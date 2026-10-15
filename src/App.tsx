@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-do
 import { LayoutDashboard, Users, UserCog, MessageSquare, Settings } from 'lucide-react';
 import { ToastProvider } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
+import { AppLockProvider } from './contexts/AppLockContext';
 
 import Dashboard from './pages/Dashboard';
 import Volunteers from './pages/Volunteers';
@@ -18,11 +19,37 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
 
+  // iOS Native Edge-Swipe Back Gesture
+  const touchStartRef = React.useRef<{ x: number; y: number; isEdge: boolean } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isDashboard) return;
+    const touch = e.touches[0];
+    // Must originate within 32px of the left screen edge
+    if (touch.clientX <= 32) {
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY, isEdge: true };
+    } else {
+      touchStartRef.current = null;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || !touchStartRef.current.isEdge) return;
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    // Rightward horizontal swipe of >= 60px
+    if (deltaX >= 60 && Math.abs(deltaY) < deltaX * 0.75) {
+      navigate('/dashboard');
+    }
+    touchStartRef.current = null;
+  };
+
   // Format title for inner pages
   const getPageTitle = () => {
     switch (location.pathname) {
       case '/volunteers': return 'Talent Directory';
-      case '/manpower': return 'Manpower Staff';
+      case '/manpower': return 'Manpowers';
       case '/whatsapp-drafts': return 'WhatsApp Drafts';
       case '/settings': return 'System Settings';
       default: return 'NEK LEADS';
@@ -30,7 +57,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className={`app-container ${isDashboard ? 'dashboard-view' : ''}`}>
+    <div 
+      className={`app-container ${isDashboard ? 'dashboard-view' : ''}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Desktop Sidebar: Only visible when NOT on dashboard */}
       {!isDashboard && (
         <nav className="sidebar desktop-only">
@@ -48,7 +79,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             </NavLink>
             <NavLink to="/manpower" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
               <UserCog size={20} />
-              Manpower
+              Manpowers
             </NavLink>
             <NavLink to="/whatsapp-drafts" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
               <MessageSquare size={20} />
@@ -119,7 +150,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           </NavLink>
           <NavLink to="/manpower" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
             <UserCog size={20} />
-            <span>Staff</span>
+            <span>Manpowers</span>
           </NavLink>
           <NavLink to="/whatsapp-drafts" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
             <MessageSquare size={20} />
@@ -137,6 +168,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => {
   React.useEffect(() => {
+    // 1. Editorial brand splash dismiss
     const timer = setTimeout(() => {
       const splash = document.getElementById('splash-screen');
       if (splash) {
@@ -144,24 +176,59 @@ const App = () => {
         splash.style.visibility = 'hidden';
         setTimeout(() => splash.remove(), 600); // Remove from DOM after smooth transition
       }
-    }, 1800); // 1.8 seconds for editorial brand animation
-    return () => clearTimeout(timer);
+    }, 1800);
+
+    // 2. Freeze background completely whenever any popup or modal occurs
+    const checkModalState = () => {
+      const hasModal = document.querySelector('.modal-overlay') !== null;
+      if (hasModal) {
+        document.body.classList.add('modal-open');
+      } else {
+        document.body.classList.remove('modal-open');
+      }
+    };
+
+    const observer = new MutationObserver(checkModalState);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Block background touch-scrolling on mobile while any popup is open
+    const handleTouchMove = (e: TouchEvent) => {
+      if (document.body.classList.contains('modal-open')) {
+        const target = e.target as HTMLElement | null;
+        if (!target || !target.closest('.modal-content')) {
+          if (e.cancelable) {
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.body.classList.remove('modal-open');
+    };
   }, []);
 
   return (
     <BrowserRouter>
       <ToastProvider>
         <DialogProvider>
-          <AppLayout>
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/volunteers" element={<Volunteers />} />
-              <Route path="/manpower" element={<Manpower />} />
-              <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </AppLayout>
+          <AppLockProvider>
+            <AppLayout>
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/volunteers" element={<Volunteers />} />
+                <Route path="/manpower" element={<Manpower />} />
+                <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Routes>
+            </AppLayout>
+          </AppLockProvider>
         </DialogProvider>
       </ToastProvider>
     </BrowserRouter>
