@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, RefreshCw, Send, Edit3, Wand2, Megaphone, CreditCard, CheckCircle2, FileText } from 'lucide-react';
+import { Copy, RefreshCw, Send, Edit3, Wand2, Megaphone, CreditCard, CheckCircle2, FileText, Calculator, Smartphone } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
+import { PayoutCalculatorModal } from '../components/PayoutCalculatorModal';
+import { openWhatsAppDirect } from '../lib/whatsapp';
+import { getCandidates, Candidate } from '../lib/db';
 
 type PresetType = 'requirement' | 'client_payment' | 'team_payment' | 'custom';
 
@@ -69,6 +72,11 @@ export default function WhatsAppDrafts() {
     custom: false
   });
 
+  // Calculator and Candidate Direct Messaging States
+  const [isCalcOpen, setIsCalcOpen] = useState(false);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string>('');
+
   const { addToast } = useToast();
   const { confirm } = useDialog();
 
@@ -92,6 +100,9 @@ export default function WhatsAppDrafts() {
 
       const savedModes = localStorage.getItem('nek_draft_modes');
       if (savedModes) setIsManualMode(JSON.parse(savedModes));
+
+      // Load candidate database for direct WhatsApp linking
+      setCandidates(getCandidates());
     } catch {
       console.warn('Failed to parse cached WhatsApp drafts');
     }
@@ -278,6 +289,21 @@ export default function WhatsAppDrafts() {
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
   };
 
+  const handleSendToCandidate = () => {
+    if (!currentMessage.trim()) {
+      addToast('error', 'Cannot send an empty message');
+      return;
+    }
+    if (!selectedCandidateId) {
+      addToast('error', 'Select a candidate from the dropdown first');
+      return;
+    }
+    const candidate = candidates.find(c => c.id === selectedCandidateId);
+    if (!candidate) return;
+    openWhatsAppDirect(candidate.phone, currentMessage);
+    addToast('success', `Opening WhatsApp for ${candidate.name}`);
+  };
+
   const handleClearCurrent = async () => {
     const ok = await confirm({
       title: 'Reset Active Preset?',
@@ -317,12 +343,39 @@ export default function WhatsAppDrafts() {
   return (
     <div>
       {/* Header Area */}
-      <div className="flex justify-between items-center mb-4 flex-mobile-col">
+      <div className="flex justify-between items-center mb-4 flex-mobile-col" style={{ gap: '12px' }}>
         <div>
           <h1 className="page-title" style={{ marginBottom: 4 }}>WhatsApp Drafts</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
             Select a preset to broadcast requirements, request client payments, or confirm team payouts.
           </p>
+        </div>
+        <div>
+          <button 
+            onClick={() => setIsCalcOpen(true)}
+            className="btn btn-secondary"
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              padding: '10px 16px',
+              borderRadius: '12px',
+              fontWeight: 600,
+              fontSize: '13px'
+            }}
+          >
+            <Calculator size={17} />
+            <span>Payout Calculator</span>
+            <span style={{ 
+              fontSize: '10px', 
+              padding: '2px 6px', 
+              borderRadius: '6px', 
+              backgroundColor: 'var(--color-primary)', 
+              color: 'var(--color-bg-primary)',
+              fontWeight: 700,
+              letterSpacing: '0.5px'
+            }}>NEW</span>
+          </button>
         </div>
       </div>
 
@@ -996,8 +1049,88 @@ export default function WhatsAppDrafts() {
               <Send size={16} /> Open WhatsApp
             </button>
           </div>
+
+          {/* Direct Send to Candidate Box */}
+          <div style={{
+            marginTop: '16px',
+            padding: '16px',
+            borderRadius: '16px',
+            backgroundColor: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                ⚡ One-Tap Send to Candidate
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+                {candidates.length} in directory
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <select
+                className="input-field"
+                value={selectedCandidateId}
+                onChange={(e) => setSelectedCandidateId(e.target.value)}
+                style={{ flex: 1, minWidth: '180px', fontSize: '13px' }}
+              >
+                <option value="">-- Choose Candidate to Message --</option>
+                {candidates.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.type || 'Lead'} &bull; {c.location})
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={handleSendToCandidate}
+                disabled={!selectedCandidateId}
+                className="btn btn-primary"
+                style={{
+                  backgroundColor: selectedCandidateId ? '#25D366' : 'var(--color-border)',
+                  color: '#FFFFFF',
+                  borderColor: selectedCandidateId ? '#25D366' : 'transparent',
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  opacity: selectedCandidateId ? 1 : 0.6,
+                  cursor: selectedCandidateId ? 'pointer' : 'not-allowed'
+                }}
+              >
+                <Smartphone size={16} /> Send to Lead
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Payout & Margin Calculator Modal */}
+      <PayoutCalculatorModal
+        isOpen={isCalcOpen}
+        onClose={() => setIsCalcOpen(false)}
+        onApplyToClientDraft={(data) => {
+          setClientData(prev => ({
+            ...prev,
+            clientName: data.clientName,
+            eventName: data.eventName,
+            totalAmount: data.totalAmount,
+            dueAmount: data.totalAmount,
+            note: data.note
+          }));
+          setActivePreset('client_payment');
+        }}
+        onApplyToTeamDraft={(data) => {
+          setTeamData(prev => ({
+            ...prev,
+            eventName: data.eventName,
+            amountPaid: data.amountPaid,
+            remarks: data.remarks
+          }));
+          setActivePreset('team_payment');
+        }}
+      />
     </div>
   );
 }

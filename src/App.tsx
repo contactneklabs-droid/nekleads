@@ -5,11 +5,11 @@ import { ToastProvider } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { AppLockProvider } from './contexts/AppLockContext';
 
-import Dashboard from './pages/Dashboard';
-import Volunteers from './pages/Volunteers';
-import Manpower from './pages/Manpower';
-import WhatsAppDrafts from './pages/WhatsAppDrafts';
-import SettingsPage from './pages/Settings';
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Volunteers = React.lazy(() => import('./pages/Volunteers'));
+const Manpower = React.lazy(() => import('./pages/Manpower'));
+const WhatsAppDrafts = React.lazy(() => import('./pages/WhatsAppDrafts'));
+const SettingsPage = React.lazy(() => import('./pages/Settings'));
 
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
@@ -168,15 +168,15 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => {
   React.useEffect(() => {
-    // 1. Editorial brand splash dismiss
+    // 1. Editorial brand splash dismiss - instant fluid transition on mount
     const timer = setTimeout(() => {
       const splash = document.getElementById('splash-screen');
       if (splash) {
         splash.style.opacity = '0';
         splash.style.visibility = 'hidden';
-        setTimeout(() => splash.remove(), 600); // Remove from DOM after smooth transition
+        setTimeout(() => splash.remove(), 250);
       }
-    }, 1800);
+    }, 120);
 
     // 2. Freeze background completely whenever any popup or modal occurs
     const checkModalState = () => {
@@ -219,14 +219,20 @@ const App = () => {
         <DialogProvider>
           <AppLockProvider>
             <AppLayout>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/volunteers" element={<Volunteers />} />
-                <Route path="/manpower" element={<Manpower />} />
-                <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Routes>
+              <React.Suspense fallback={
+                <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+                  Loading view...
+                </div>
+              }>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/volunteers" element={<Volunteers />} />
+                  <Route path="/manpower" element={<Manpower />} />
+                  <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Routes>
+              </React.Suspense>
             </AppLayout>
           </AppLockProvider>
         </DialogProvider>

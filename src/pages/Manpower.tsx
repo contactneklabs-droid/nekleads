@@ -4,6 +4,7 @@ import { getCandidates, saveCandidate, updateCandidate, deleteCandidate, Candida
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { SwipeableLeadCard } from '../components/SwipeableLeadCard';
+import { WhatsAppDirectModal } from '../components/WhatsAppDirectModal';
 
 export default function Manpower() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -13,6 +14,7 @@ export default function Manpower() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [whatsAppCandidate, setWhatsAppCandidate] = useState<Candidate | null>(null);
   
   const { addToast } = useToast();
   const { confirm } = useDialog();
@@ -119,10 +121,9 @@ export default function Manpower() {
     }
   };
 
-  const openWhatsApp = (phone: string) => {
+  const openWhatsApp = (candidate: Candidate) => {
     setOpenCardId(null);
-    const cleaned = phone.replace(/\D/g, '');
-    window.open(`https://wa.me/${cleaned}`, '_blank');
+    setWhatsAppCandidate(candidate);
   };
 
   const filtered = candidates.filter(c => {
@@ -217,7 +218,7 @@ export default function Manpower() {
                 <td>{c.location}</td>
                 <td>
                   <div className="flex gap-2">
-                    <button onClick={() => openWhatsApp(c.phone)} className="btn btn-secondary" style={{ padding: 6 }} title="WhatsApp">
+                    <button onClick={() => openWhatsApp(c)} className="btn btn-secondary" style={{ padding: 6 }} title="WhatsApp">
                       <MessageCircle size={16} />
                     </button>
                     <button onClick={() => handleEdit(c)} className="btn btn-secondary" style={{ padding: 6 }} title="Edit Lead">
@@ -265,7 +266,7 @@ export default function Manpower() {
               onLongPress={() => toggleSelect(c.id)}
               onEdit={() => handleEdit(c)}
               onDelete={() => handleDelete(c.id)}
-              onWhatsApp={() => openWhatsApp(c.phone)}
+              onWhatsApp={() => openWhatsApp(c)}
               getInitials={getInitials}
             />
           ))
@@ -315,6 +316,13 @@ export default function Manpower() {
           </div>
         </div>
       )}
+
+      {/* WhatsApp Direct Messaging Modal */}
+      <WhatsAppDirectModal 
+        isOpen={!!whatsAppCandidate} 
+        candidate={whatsAppCandidate} 
+        onClose={() => setWhatsAppCandidate(null)} 
+      />
     </div>
   );
 }

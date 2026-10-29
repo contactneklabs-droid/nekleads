@@ -4,7 +4,6 @@ import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import { getCandidates, saveCandidate } from '../lib/db';
-import * as XLSX from 'xlsx';
 
 export default function Settings() {
   const { addToast } = useToast();
@@ -121,6 +120,7 @@ export default function Settings() {
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
+        const XLSX = await import('xlsx');
         const bstr = evt.target?.result;
         const workbook = XLSX.read(bstr, { type: 'binary' });
         const wsname = workbook.SheetNames[0];

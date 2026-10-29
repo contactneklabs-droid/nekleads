@@ -769,3 +769,199 @@ body.modal-open .modal-overlay {
 .skeleton * {
   visibility: hidden;
 }
+
+/* Redesigned Dashboard UI Enhancements */
+.speed-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) {
+  .speed-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+.speed-strip-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+}
+
+.speed-strip-btn:hover {
+  background-color: var(--color-bg-primary);
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.speed-strip-btn:active {
+  transform: scale(0.96) !important;
+}
+
+.dashboard-search-box {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.dashboard-search-input {
+  width: 100%;
+  padding: 14px 44px 14px 44px;
+  border-radius: 16px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.dashboard-search-input:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-primary);
+  box-shadow: 0 0 0 3px var(--ring-color);
+}
+
+.dashboard-search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-md);
+  max-height: 380px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lead-quick-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.lead-quick-btn:hover {
+  background-color: var(--color-input-bg);
+  transform: scale(1.08);
+}
+
+.lead-quick-btn:active {
+  transform: scale(0.92);
+}
+
+.lead-quick-btn.whatsapp {
+  color: #25D366;
+  border-color: rgba(37, 211, 102, 0.3);
+}
+
+.lead-quick-btn.whatsapp:hover {
+  background-color: rgba(37, 211, 102, 0.12);
+}
+
+.lead-quick-btn.call {
+  color: #3B82F6;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.lead-quick-btn.call:hover {
+  background-color: rgba(59, 130, 246, 0.12);
+}
+
+/* Dashboard Bento Grid Layout */
+.dashboard-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.dashboard-bento-hero {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  .dashboard-bento-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .dashboard-bento-hero {
+    grid-column: 1 / -1 !important;
+  }
+
+  .bento-card {
+    min-height: 108px !important;
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .bento-card-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .bento-card-meta {
+    font-size: 11px !important;
+    margin-top: 3px !important;
+    line-height: 1.2 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  .bento-icon-wrapper {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .bento-card-badge {
+    font-size: 9px !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.3px !important;
+    white-space: nowrap !important;
+    max-width: 70px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
