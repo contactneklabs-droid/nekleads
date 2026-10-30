@@ -8,7 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['favicon.jpg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'favicon.jpg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'NEK LEADS',
         short_name: 'NEK LEADS',
@@ -19,14 +19,19 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'favicon.jpg',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/jpeg'
+            type: 'image/png'
           },
           {
-            src: 'favicon.jpg',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/jpeg',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ],
@@ -36,21 +41,21 @@ export default defineConfig({
             short_name: 'Drafts',
             description: 'Event and payment notice generator',
             url: '/whatsapp-drafts',
-            icons: [{ src: 'favicon.jpg', sizes: '192x192' }]
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           },
           {
             name: 'Talent Directory',
             short_name: 'Talent',
             description: 'View hostesses & volunteer leads',
             url: '/volunteers',
-            icons: [{ src: 'favicon.jpg', sizes: '192x192' }]
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           },
           {
             name: 'Manpowers',
             short_name: 'Manpowers',
             description: 'View crew & manpower leads',
             url: '/manpower',
-            icons: [{ src: 'favicon.jpg', sizes: '192x192' }]
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
           }
         ]
       },
