@@ -12,9 +12,11 @@ import {
   Plus,
   Phone,
   MessageCircle,
-  ChevronRight
+  ChevronRight,
+  Download
 } from 'lucide-react';
 import { getCandidates, Candidate, syncQueue, saveCandidate } from '../lib/db';
+import { downloadInstantBackup } from '../lib/backup';
 import { useToast } from '../contexts/ToastContext';
 import { PayoutCalculatorModal } from '../components/PayoutCalculatorModal';
 import { WhatsAppDirectModal } from '../components/WhatsAppDirectModal';
@@ -53,6 +55,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement>(null);
+  const quickAddNameRef = useRef<HTMLInputElement>(null);
 
   // Active Draft info
   const [activeDraftEvent, setActiveDraftEvent] = useState<string>('');
@@ -180,6 +183,35 @@ export default function Dashboard() {
     loadData();
   };
 
+  const handleQuickAddAndAnother = () => {
+    if (!quickAddForm.name || !quickAddForm.phone || !quickAddForm.location) {
+      addToast('error', 'Please fill all required fields');
+      return;
+    }
+    const isDuplicate = candidates.some(c => c.phone === quickAddForm.phone);
+    if (isDuplicate) {
+      addToast('error', 'Phone number already registered');
+      return;
+    }
+
+    saveCandidate({
+      name: quickAddForm.name,
+      phone: quickAddForm.phone,
+      type: quickAddForm.type,
+      location: quickAddForm.location,
+      gender: quickAddForm.gender
+    });
+
+    addToast('success', `Saved ${quickAddForm.name}! Ready for next lead...`);
+    setQuickAddForm(prev => ({
+      ...prev,
+      name: '',
+      phone: ''
+    }));
+    loadData();
+    quickAddNameRef.current?.focus();
+  };
+
   const handleApplyClientDraft = (data: { clientName: string; eventName: string; totalAmount: string; note: string }) => {
     localStorage.setItem('nek_draft_client', JSON.stringify({
       clientName: data.clientName,
@@ -235,6 +267,25 @@ export default function Dashboard() {
                 cursor: 'pointer'
               }} onClick={handleSync}>
                 {stats.pendingSync > 0 ? `● ${stats.pendingSync} To Sync` : '● Synced'}
+              </span>
+
+              <span style={{
+                fontSize: '10px',
+                padding: '1px 8px',
+                borderRadius: '999px',
+                backgroundColor: 'var(--color-bg-primary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-secondary)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }} onClick={() => {
+                const count = downloadInstantBackup();
+                addToast('success', `Backed up ${count} leads to device!`);
+              }} title="1-Tap Instant Backup">
+                <Download size={10} /> Backup
               </span>
             </div>
 
@@ -780,6 +831,7 @@ export default function Dashboard() {
               <div>
                 <label className="form-label">Full Name</label>
                 <input 
+                  ref={quickAddNameRef}
                   type="text" 
                   className="input-field" 
                   placeholder="e.g. Priya Sharma"
@@ -850,13 +902,23 @@ export default function Dashboard() {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
                 <button onClick={() => setQuickAddType(null)} className="btn btn-secondary">
                   Cancel
                 </button>
-                <button onClick={handleQuickAddSubmit} className="btn btn-primary">
-                  Save Candidate
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    type="button"
+                    onClick={handleQuickAddAndAnother} 
+                    className="btn btn-secondary"
+                    style={{ fontWeight: 600, fontSize: '13px' }}
+                  >
+                    + Save & Add Another
+                  </button>
+                  <button onClick={handleQuickAddSubmit} className="btn btn-primary">
+                    Save Lead
+                  </button>
+                </div>
               </div>
             </div>
           </div>

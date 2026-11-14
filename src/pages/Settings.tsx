@@ -4,6 +4,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import { getCandidates, saveCandidate } from '../lib/db';
+import { downloadInstantBackup } from '../lib/backup';
 
 export default function Settings() {
   const { addToast } = useToast();
@@ -83,15 +84,8 @@ export default function Settings() {
   };
 
   const handleExportJSON = () => {
-    const data = getCandidates();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `nek-leads-backup.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    addToast('success', 'Data exported successfully');
+    const count = downloadInstantBackup();
+    addToast('success', `Backed up ${count} leads to device!`);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

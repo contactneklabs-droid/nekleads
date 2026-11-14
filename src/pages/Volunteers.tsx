@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Upload, MessageCircle, Trash2, CheckSquare, Square, ChevronLeft, ChevronRight, Edit3 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Plus, MessageCircle, Trash2, CheckSquare, Square, ChevronLeft, ChevronRight, Edit3, Download } from 'lucide-react';
 import { getCandidates, saveCandidate, updateCandidate, deleteCandidate, Candidate } from '../lib/db';
+import { downloadInstantBackup } from '../lib/backup';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { SwipeableLeadCard } from '../components/SwipeableLeadCard';
 import { WhatsAppDirectModal } from '../components/WhatsAppDirectModal';
+import { LeadCardSkeleton } from '../components/LeadCardSkeleton';
 
 export default function Volunteers() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -19,7 +21,9 @@ export default function Volunteers() {
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [whatsAppCandidate, setWhatsAppCandidate] = useState<Candidate | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const itemsPerPage = 10;
 
   const { addToast } = useToast();
@@ -33,6 +37,8 @@ export default function Volunteers() {
 
   useEffect(() => {
     loadData();
+    const timer = setTimeout(() => setIsLoading(false), 200);
+    return () => clearTimeout(timer);
   }, []);
 
   const loadData = () => {
@@ -59,6 +65,7 @@ export default function Volunteers() {
     setEditingId(null);
     setFormData({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Male' });
     setIsModalOpen(true);
+    setTimeout(() => nameInputRef.current?.focus(), 80);
   };
 
   const handleCloseModal = () => {
@@ -88,6 +95,36 @@ export default function Volunteers() {
 
     handleCloseModal();
     loadData();
+  };
+
+  const handleSaveAndAddAnother = () => {
+    if (!formData.name || !formData.phone || !formData.location) {
+      addToast('error', 'Please fill all required fields');
+      return;
+    }
+    const isDuplicate = candidates.some(c => c.phone === formData.phone && c.id !== editingId);
+    if (isDuplicate) {
+      addToast('error', 'Phone number already exists');
+      return;
+    }
+
+    saveCandidate(formData);
+    addToast('success', `Saved ${formData.name}! Enter next lead...`);
+
+    // Keep category, gender, and location for fast batch entry; reset name and phone
+    setFormData(prev => ({
+      ...prev,
+      name: '',
+      phone: ''
+    }));
+
+    loadData();
+    nameInputRef.current?.focus();
+  };
+
+  const handleInstantBackup = () => {
+    const count = downloadInstantBackup();
+    addToast('success', `Backed up ${count} leads to your device!`);
   };
 
   const handleDelete = async (id: string) => {
@@ -165,9 +202,15 @@ export default function Volunteers() {
             {filtered.length} total candidate{filtered.length !== 1 ? 's' : ''}
           </div>
         </div>
-        <div className="flex gap-4">
-          <button className="btn btn-secondary">
-            <Upload size={16} /> <span className="desktop-only">Import</span>
+        <div className="flex gap-2">
+          <button 
+            className="btn btn-secondary" 
+            onClick={handleInstantBackup} 
+            title="1-Tap Instant Backup to Device"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Download size={15} /> 
+            <span>Backup</span>
           </button>
           <button className="btn btn-primary" onClick={handleOpenAdd}>
             <Plus size={16} /> Add <span className="desktop-only" style={{ marginLeft: 4 }}>Candidate</span>
@@ -325,7 +368,9 @@ export default function Volunteers() {
 
       {/* MOBILE CARD VIEW (Slide to Edit/Delete + Long Press to Select) */}
       <div className="mobile-only" style={{ flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
-        {paginatedData.length === 0 ? (
+        {isLoading ? (
+          <LeadCardSkeleton count={4} />
+        ) : paginatedData.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)', borderRadius: '16px', backgroundColor: 'var(--color-bg-primary)' }}>
             No candidates found
           </div>
@@ -395,7 +440,7 @@ export default function Volunteers() {
             <h2 className="modal-header">{editingId ? 'Edit Lead' : 'Add Candidate'}</h2>
             <div className="form-group" style={{ marginBottom: 16 }}>
               <label className="form-label">Name</label>
-              <input className="input-field" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <input ref={nameInputRef} className="input-field" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
             <div className="form-group" style={{ marginBottom: 16 }}>
               <label className="form-label">Phone</label>
@@ -434,9 +479,21 @@ export default function Volunteers() {
               <input className="input-field" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
             </div>
             
-            <div className="flex justify-between mt-4">
+            <div className="flex justify-between items-center mt-4 gap-2 flex-wrap">
               <button className="btn btn-secondary" onClick={handleCloseModal}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave}>{editingId ? 'Update Lead' : 'Save'}</button>
+              <div className="flex gap-2">
+                {!editingId && (
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={handleSaveAndAddAnother}
+                    style={{ fontWeight: 600, fontSize: '13px' }}
+                  >
+                    + Save & Add Another
+                  </button>
+                )}
+                <button className="btn btn-primary" onClick={handleSave}>{editingId ? 'Update Lead' : 'Save'}</button>
+              </div>
             </div>
           </div>
         </div>
