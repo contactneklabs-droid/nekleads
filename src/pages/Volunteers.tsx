@@ -29,7 +29,7 @@ export default function Volunteers() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const [formData, setFormData] = useState({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Female' });
+  const [formData, setFormData] = useState({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Male' });
 
   useEffect(() => {
     loadData();
@@ -50,21 +50,21 @@ export default function Volunteers() {
       phone: candidate.phone,
       type: candidate.type || 'Volunteer',
       location: candidate.location,
-      gender: candidate.gender || 'Female'
+      gender: candidate.gender || 'Male'
     });
     setIsModalOpen(true);
   };
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Female' });
+    setFormData({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Male' });
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Female' });
+    setFormData({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Male' });
   };
 
   const handleSave = () => {
@@ -277,7 +277,34 @@ export default function Volunteers() {
                     {c.type}
                   </span>
                 </td>
-                <td>{c.gender || 'N/A'}</td>
+                <td>
+                  {c.gender ? (
+                    <span style={{
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      backgroundColor: c.gender.toLowerCase() === 'male'
+                        ? 'rgba(30, 58, 138, 0.28)'
+                        : c.gender.toLowerCase() === 'female'
+                        ? 'rgba(236, 72, 153, 0.2)'
+                        : 'var(--color-bg-secondary)',
+                      border: '1px solid',
+                      borderColor: c.gender.toLowerCase() === 'male'
+                        ? '#1d4ed8'
+                        : c.gender.toLowerCase() === 'female'
+                        ? '#ec4899'
+                        : 'var(--color-border)',
+                      color: c.gender.toLowerCase() === 'male'
+                        ? '#60a5fa'
+                        : c.gender.toLowerCase() === 'female'
+                        ? '#f472b6'
+                        : 'var(--color-text-secondary)'
+                    }}>
+                      {c.gender}
+                    </span>
+                  ) : 'N/A'}
+                </td>
                 <td>{c.location}</td>
                 <td>
                   <div className="flex gap-2">
@@ -404,8 +431,8 @@ export default function Volunteers() {
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Gender</label>
                 <select className="input-field" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
-                  <option value="Female">Female</option>
                   <option value="Male">Male</option>
+                  <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
               </div>

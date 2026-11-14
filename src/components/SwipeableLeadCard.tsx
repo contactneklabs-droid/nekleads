@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Trash2, Edit3, CheckSquare, Square } from 'lucide-react';
+import { MessageCircle, Trash2, Edit3 } from 'lucide-react';
 
 export interface SwipeableLeadCardProps {
   id?: string;
@@ -190,11 +190,6 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
     onWhatsApp();
   };
 
-  const handleCheckboxClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleSelect?.();
-  };
-
   return (
     <div
       style={{
@@ -291,28 +286,7 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, minWidth: 0 }}>
-            {/* Checkbox (Tap or Long Press selects) */}
-            <button
-              onClick={handleCheckboxClick}
-              aria-label={`Select candidate ${name}`}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                padding: 0,
-                flexShrink: 0,
-                cursor: 'pointer'
-              }}
-            >
-              {isSelected ? <CheckSquare size={20} className="text-primary" /> : <Square size={20} />}
-            </button>
-
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, minWidth: 0 }}>
             {/* Avatar Circle */}
             <div
               style={{
@@ -404,9 +378,23 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
                 padding: '3px 8px',
                 borderRadius: '6px',
                 fontSize: '11px',
-                backgroundColor: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-secondary)'
+                fontWeight: 600,
+                backgroundColor: gender.toLowerCase() === 'male'
+                  ? 'rgba(30, 58, 138, 0.28)'
+                  : gender.toLowerCase() === 'female'
+                  ? 'rgba(236, 72, 153, 0.2)'
+                  : 'var(--color-bg-secondary)',
+                border: '1px solid',
+                borderColor: gender.toLowerCase() === 'male'
+                  ? '#1d4ed8'
+                  : gender.toLowerCase() === 'female'
+                  ? '#ec4899'
+                  : 'var(--color-border)',
+                color: gender.toLowerCase() === 'male'
+                  ? '#60a5fa'
+                  : gender.toLowerCase() === 'female'
+                  ? '#f472b6'
+                  : 'var(--color-text-secondary)'
               }}
             >
               {gender}

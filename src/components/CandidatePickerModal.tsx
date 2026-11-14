@@ -268,3 +268,4 @@ export const CandidatePickerModal: React.FC<CandidatePickerModalProps> = ({
     </div>
   );
 };
+

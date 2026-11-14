@@ -44,9 +44,9 @@ export default function Dashboard() {
   const [quickAddForm, setQuickAddForm] = useState({
     name: '',
     phone: '',
-    type: 'Hostess',
+    type: 'Volunteer',
     location: '',
-    gender: 'Female'
+    gender: 'Male'
   });
 
   // Global Instant Search state
@@ -176,7 +176,7 @@ export default function Dashboard() {
 
     addToast('success', `Added ${quickAddForm.name} to directory`);
     setQuickAddType(null);
-    setQuickAddForm({ name: '', phone: '', type: 'Hostess', location: '', gender: 'Female' });
+    setQuickAddForm({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Male' });
     loadData();
   };
 
@@ -402,7 +402,7 @@ export default function Dashboard() {
           className="speed-strip-btn"
           onClick={() => {
             setQuickAddType('talent');
-            setQuickAddForm({ name: '', phone: '', type: 'Hostess', location: '', gender: 'Female' });
+            setQuickAddForm({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Male' });
           }}
         >
           <Plus size={16} />
@@ -809,8 +809,8 @@ export default function Dashboard() {
                   >
                     {quickAddType === 'talent' ? (
                       <>
-                        <option value="Hostess">Hostess</option>
                         <option value="Volunteer">Volunteer</option>
+                        <option value="Hostess">Hostess</option>
                         <option value="Talent">Talent</option>
                         <option value="Model">Model</option>
                       </>
@@ -832,8 +832,8 @@ export default function Dashboard() {
                     value={quickAddForm.gender}
                     onChange={(e) => setQuickAddForm({ ...quickAddForm, gender: e.target.value })}
                   >
-                    <option value="Female">Female</option>
                     <option value="Male">Male</option>
+                    <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>

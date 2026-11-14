@@ -95,9 +95,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main Content Area */}
       <main className="main-content">
-        <header className="topbar">
-          {/* If on inner page, show sleek back button */}
-          {!isDashboard ? (
+        {!isDashboard && (
+          <header className="topbar">
+            {/* If on inner page, show sleek back button */}
             <button 
               onClick={() => navigate('/dashboard')}
               style={{ 
@@ -118,19 +118,12 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
               <ChevronLeft size={20} />
               <span>Dashboard</span>
             </button>
-          ) : (
-            <div className="font-display" style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '1px', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-              NEK. <span style={{ fontSize: '13px', fontWeight: 500, letterSpacing: '3px', color: 'var(--color-text-secondary)' }}>LEADS</span>
-            </div>
-          )}
 
-          {!isDashboard && (
             <div className="desktop-only" style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-text-secondary)' }}>
               {getPageTitle()}
             </div>
-          )}
-
-        </header>
+          </header>
+        )}
 
         <div className="page-content" style={{ paddingBottom: isDashboard ? '40px' : 'calc(90px + env(safe-area-inset-bottom))' }}>
           {children}
