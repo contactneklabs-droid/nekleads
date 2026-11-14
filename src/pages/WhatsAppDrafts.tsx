@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, RefreshCw, Send, Edit3, Wand2, Megaphone, CreditCard, CheckCircle2, FileText, Calculator, Smartphone } from 'lucide-react';
+import { 
+  Copy, RefreshCw, Send, Wand2, Megaphone, CreditCard, 
+  CheckCircle2, FileText, Calculator, Smartphone, Eye, History, 
+  Sparkles, User, ChevronRight, X 
+} from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { PayoutCalculatorModal } from '../components/PayoutCalculatorModal';
+import { CandidatePickerModal } from '../components/CandidatePickerModal';
+import { WhatsAppBubblePreview } from '../components/WhatsAppBubblePreview';
+import { MobileDraftPreviewSheet } from '../components/MobileDraftPreviewSheet';
+import { DraftHistoryModal, DraftHistoryItem } from '../components/DraftHistoryModal';
 import { openWhatsAppDirect } from '../lib/whatsapp';
 import { getCandidates, Candidate } from '../lib/db';
 
@@ -77,10 +85,18 @@ export default function WhatsAppDrafts() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>('');
 
+  // Mobile enhancements & History state
+  const [isCandidatePickerOpen, setIsCandidatePickerOpen] = useState(false);
+  const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [draftHistory, setDraftHistory] = useState<DraftHistoryItem[]>([]);
+
   const { addToast } = useToast();
   const { confirm } = useDialog();
 
-  // Load cached presets on mount
+  const selectedCandidate = candidates.find(c => c.id === selectedCandidateId) || null;
+
+  // Load cached presets and history on mount
   useEffect(() => {
     try {
       const savedReq = localStorage.getItem('nek_draft_requirement');
@@ -100,6 +116,9 @@ export default function WhatsAppDrafts() {
 
       const savedModes = localStorage.getItem('nek_draft_modes');
       if (savedModes) setIsManualMode(JSON.parse(savedModes));
+
+      const savedHistory = localStorage.getItem('nek_draft_history');
+      if (savedHistory) setDraftHistory(JSON.parse(savedHistory));
 
       // Load candidate database for direct WhatsApp linking
       setCandidates(getCandidates());
@@ -271,9 +290,41 @@ export default function WhatsAppDrafts() {
     addToast('success', 'Message regenerated from details');
   };
 
+  // Save snapshot to history (max 5)
+  const saveToHistory = (preset: PresetType, messageText: string) => {
+    if (!messageText.trim()) return;
+    try {
+      const prev: DraftHistoryItem[] = JSON.parse(localStorage.getItem('nek_draft_history') || '[]');
+      const filtered = prev.filter(item => item.message !== messageText);
+      const title = (
+        preset === 'requirement' ? reqData.eventName :
+        preset === 'client_payment' ? (clientData.eventName || clientData.clientName) :
+        preset === 'team_payment' ? (teamData.recipientName || teamData.eventName) :
+        customData.title
+      ) || 'Event Broadcast';
+
+      const updated: DraftHistoryItem[] = [
+        {
+          id: Date.now().toString(),
+          timestamp: Date.now(),
+          preset,
+          title,
+          message: messageText
+        },
+        ...filtered
+      ].slice(0, 5);
+
+      setDraftHistory(updated);
+      localStorage.setItem('nek_draft_history', JSON.stringify(updated));
+    } catch (err) {
+      console.warn('Failed to save draft history', err);
+    }
+  };
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(currentMessage);
+      saveToHistory(activePreset, currentMessage);
       addToast('success', 'Message copied to clipboard');
     } catch {
       addToast('error', 'Failed to access clipboard');
@@ -285,6 +336,7 @@ export default function WhatsAppDrafts() {
       addToast('error', 'Cannot send an empty message');
       return;
     }
+    saveToHistory(activePreset, currentMessage);
     const encoded = encodeURIComponent(currentMessage);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
   };
@@ -294,14 +346,62 @@ export default function WhatsAppDrafts() {
       addToast('error', 'Cannot send an empty message');
       return;
     }
-    if (!selectedCandidateId) {
-      addToast('error', 'Select a candidate from the dropdown first');
+    if (!selectedCandidate) {
+      addToast('error', 'Select a candidate first');
+      setIsCandidatePickerOpen(true);
       return;
     }
-    const candidate = candidates.find(c => c.id === selectedCandidateId);
-    if (!candidate) return;
-    openWhatsAppDirect(candidate.phone, currentMessage);
-    addToast('success', `Opening WhatsApp for ${candidate.name}`);
+    saveToHistory(activePreset, currentMessage);
+    openWhatsAppDirect(selectedCandidate.phone, currentMessage);
+    addToast('success', `Opening WhatsApp for ${selectedCandidate.name}`);
+  };
+
+  // Autofill from previous cached event
+  const handleAutofillPreviousEvent = () => {
+    try {
+      const cached = localStorage.getItem('nek_last_event_meta');
+      if (!cached) {
+        addToast('info', 'No previous event details cached yet');
+        return;
+      }
+      const meta = JSON.parse(cached);
+      const updated = {
+        ...reqData,
+        eventName: meta.eventName || reqData.eventName,
+        venueName: meta.venueName || reqData.venueName,
+        mapsLink: meta.mapsLink || reqData.mapsLink,
+        dressCode: meta.dressCode || reqData.dressCode,
+        startTime: meta.startTime || reqData.startTime,
+        endTime: meta.endTime || reqData.endTime,
+        amount: meta.amount || reqData.amount,
+        paymentCycle: meta.paymentCycle || reqData.paymentCycle,
+        workProfile: meta.workProfile || reqData.workProfile,
+        instructions: meta.instructions || reqData.instructions
+      };
+      setReqData(updated);
+      localStorage.setItem('nek_draft_requirement', JSON.stringify(updated));
+      addToast('success', `Autofilled from "${meta.eventName || 'previous event'}"`);
+    } catch {
+      addToast('error', 'Failed to autofill event');
+    }
+  };
+
+  // Restore snapshot from history
+  const handleSelectHistoryItem = (item: DraftHistoryItem) => {
+    setActivePreset(item.preset as PresetType);
+    const newModes = { ...isManualMode, [item.preset]: true };
+    const newManuals = { ...manualMessages, [item.preset]: item.message };
+    setIsManualMode(newModes);
+    setManualMessages(newManuals);
+    localStorage.setItem('nek_draft_modes', JSON.stringify(newModes));
+    localStorage.setItem('nek_draft_manuals', JSON.stringify(newManuals));
+    addToast('success', `Loaded "${item.title}"`);
+  };
+
+  const handleClearHistory = () => {
+    setDraftHistory([]);
+    localStorage.removeItem('nek_draft_history');
+    addToast('info', 'Draft history cleared');
   };
 
   const handleClearCurrent = async () => {
@@ -379,113 +479,200 @@ export default function WhatsAppDrafts() {
         </div>
       </div>
 
-      {/* Preset Segmented Selector */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '8px', 
-        padding: '6px', 
-        backgroundColor: 'var(--color-bg-secondary)', 
-        border: '1px solid var(--color-border)', 
-        borderRadius: '16px', 
-        marginBottom: '24px',
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch'
-      }}>
-        <button
-          onClick={() => setActivePreset('requirement')}
-          style={{
-            flex: 1,
-            minWidth: '130px',
-            padding: '10px 14px',
-            borderRadius: '12px',
-            border: 'none',
-            backgroundColor: activePreset === 'requirement' ? 'var(--color-bg-primary)' : 'transparent',
-            color: activePreset === 'requirement' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-            fontWeight: 600,
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            boxShadow: activePreset === 'requirement' ? 'var(--shadow-sm)' : 'none',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <Megaphone size={16} /> Requirement
-        </button>
+      {/* Preset Segmented Selector & Utilities */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: '6px', 
+          padding: '4px', 
+          backgroundColor: 'var(--color-bg-secondary)', 
+          border: '1px solid var(--color-border)', 
+          borderRadius: '16px',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          <button
+            onClick={() => setActivePreset('requirement')}
+            className="draft-pill-btn"
+            style={{
+              flex: 1,
+              padding: '10px 12px',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: activePreset === 'requirement' ? 'var(--color-bg-primary)' : 'transparent',
+              color: activePreset === 'requirement' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              fontWeight: 700,
+              fontSize: '12.5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: activePreset === 'requirement' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Megaphone size={15} />
+            <span className="tab-full">Requirement</span>
+            <span className="tab-short">Req</span>
+          </button>
 
-        <button
-          onClick={() => setActivePreset('client_payment')}
-          style={{
-            flex: 1,
-            minWidth: '130px',
-            padding: '10px 14px',
-            borderRadius: '12px',
-            border: 'none',
-            backgroundColor: activePreset === 'client_payment' ? 'var(--color-bg-primary)' : 'transparent',
-            color: activePreset === 'client_payment' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-            fontWeight: 600,
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            boxShadow: activePreset === 'client_payment' ? 'var(--shadow-sm)' : 'none',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <CreditCard size={16} /> Client Payment
-        </button>
+          <button
+            onClick={() => setActivePreset('client_payment')}
+            className="draft-pill-btn"
+            style={{
+              flex: 1,
+              padding: '10px 12px',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: activePreset === 'client_payment' ? 'var(--color-bg-primary)' : 'transparent',
+              color: activePreset === 'client_payment' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              fontWeight: 700,
+              fontSize: '12.5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: activePreset === 'client_payment' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <CreditCard size={15} />
+            <span className="tab-full">Client Invoice</span>
+            <span className="tab-short">Client</span>
+          </button>
 
-        <button
-          onClick={() => setActivePreset('team_payment')}
-          style={{
-            flex: 1,
-            minWidth: '130px',
-            padding: '10px 14px',
-            borderRadius: '12px',
-            border: 'none',
-            backgroundColor: activePreset === 'team_payment' ? 'var(--color-bg-primary)' : 'transparent',
-            color: activePreset === 'team_payment' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-            fontWeight: 600,
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            boxShadow: activePreset === 'team_payment' ? 'var(--shadow-sm)' : 'none',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <CheckCircle2 size={16} /> Team Payout
-        </button>
+          <button
+            onClick={() => setActivePreset('team_payment')}
+            className="draft-pill-btn"
+            style={{
+              flex: 1,
+              padding: '10px 12px',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: activePreset === 'team_payment' ? 'var(--color-bg-primary)' : 'transparent',
+              color: activePreset === 'team_payment' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              fontWeight: 700,
+              fontSize: '12.5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: activePreset === 'team_payment' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <CheckCircle2 size={15} />
+            <span className="tab-full">Team Payout</span>
+            <span className="tab-short">Payout</span>
+          </button>
 
-        <button
-          onClick={() => setActivePreset('custom')}
-          style={{
-            flex: 1,
-            minWidth: '100px',
-            padding: '10px 14px',
-            borderRadius: '12px',
-            border: 'none',
-            backgroundColor: activePreset === 'custom' ? 'var(--color-bg-primary)' : 'transparent',
-            color: activePreset === 'custom' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-            fontWeight: 600,
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            boxShadow: activePreset === 'custom' ? 'var(--shadow-sm)' : 'none',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <FileText size={16} /> Custom
-        </button>
+          <button
+            onClick={() => setActivePreset('custom')}
+            className="draft-pill-btn"
+            style={{
+              flex: 1,
+              padding: '10px 12px',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: activePreset === 'custom' ? 'var(--color-bg-primary)' : 'transparent',
+              color: activePreset === 'custom' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              fontWeight: 700,
+              fontSize: '12.5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: activePreset === 'custom' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <FileText size={15} />
+            <span className="tab-full">Custom Draft</span>
+            <span className="tab-short">Custom</span>
+          </button>
+        </div>
+
+        {/* Quick Utility Actions Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {activePreset === 'requirement' && (
+              <button
+                onClick={handleAutofillPreviousEvent}
+                className="btn btn-secondary"
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '10px',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <Sparkles size={13} color="#25D366" />
+                <span>Autofill Last Event</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="btn btn-secondary"
+              style={{
+                padding: '6px 12px',
+                borderRadius: '10px',
+                fontSize: '11.5px',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <History size={13} />
+              <span>Draft History</span>
+              {draftHistory.length > 0 && (
+                <span style={{
+                  fontSize: '10px',
+                  padding: '1px 5px',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'var(--color-bg-primary)',
+                  fontWeight: 800
+                }}>
+                  {draftHistory.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Mobile Preview Trigger Pill */}
+          <button
+            onClick={() => setIsMobilePreviewOpen(true)}
+            className="btn btn-secondary mobile-only"
+            style={{
+              padding: '6px 12px',
+              borderRadius: '10px',
+              fontSize: '11.5px',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#25D366',
+              borderColor: 'rgba(37, 211, 102, 0.3)',
+              backgroundColor: 'rgba(37, 211, 102, 0.08)'
+            }}
+          >
+            <Eye size={13} />
+            <span>View Preview ({currentMessage.length} ch)</span>
+          </button>
+        </div>
       </div>
 
       <div className="responsive-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
@@ -989,122 +1176,272 @@ export default function WhatsAppDrafts() {
           </div>
         </div>
 
-        {/* Right Column: Live WhatsApp Preview */}
+        {/* Right Column: Live WhatsApp Preview (Desktop Sticky, Mobile Sheet) */}
         <div style={{ position: 'sticky', top: '80px', height: 'fit-content' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, fontFamily: 'Outfit, sans-serif' }}>Live Preview</h2>
-            <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 800, fontFamily: 'Outfit, sans-serif', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>Live Preview</span>
+            </h2>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               {isManualMode[activePreset] ? (
-                <button className="btn btn-secondary" onClick={handleRegenerate} style={{ padding: '4px 10px', fontSize: '12px', height: 'auto', borderRadius: '12px' }}>
+                <button className="btn btn-secondary" onClick={handleRegenerate} style={{ padding: '4px 10px', fontSize: '11px', height: 'auto', borderRadius: '10px' }}>
                   <Wand2 size={12} /> Reset to Auto
                 </button>
               ) : (
-                <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
                   <Wand2 size={12} /> Auto-generating
                 </span>
               )}
             </div>
           </div>
 
-          <div style={{ border: '1px solid var(--color-border)', borderRadius: '16px', overflow: 'hidden', backgroundColor: 'var(--color-bg-primary)', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ padding: '10px 16px', backgroundColor: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {isManualMode[activePreset] ? <Edit3 size={14} /> : <Wand2 size={14} />} 
-                <span style={{ fontWeight: 600 }}>{isManualMode[activePreset] ? 'Direct Manual Edit' : 'Auto Template Mode'}</span>
-              </div>
-              <span style={{ textTransform: 'capitalize', fontSize: '11px', fontWeight: 600 }}>
-                {activePreset.replace('_', ' ')}
-              </span>
-            </div>
-            
-            <textarea 
-              className="input-field" 
-              value={currentMessage} 
-              onChange={handleManualEdit}
-              placeholder="Start filling out the parameters on the left..."
-              style={{ 
-                border: 'none', 
-                borderRadius: 0, 
-                minHeight: '340px', 
-                padding: '20px', 
-                resize: 'vertical',
-                backgroundColor: 'transparent',
-                fontFamily: 'monospace',
-                fontSize: '13px',
-                lineHeight: '1.6'
-              }} 
-            />
-            
-            <div style={{ padding: '10px 16px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--color-text-secondary)', backgroundColor: 'var(--color-bg-secondary)' }}>
-              <span>{currentMessage.length} characters</span>
-              <span>Ready to broadcast</span>
-            </div>
-          </div>
-
-          <div className="flex gap-3 mt-4">
-            <button className="btn btn-secondary" style={{ flex: 1, borderRadius: '12px', padding: '12px' }} onClick={handleCopy}>
-              <Copy size={16} /> Copy Message
-            </button>
-            <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#000000', color: '#FFFFFF', border: 'none', borderRadius: '12px', padding: '12px' }} onClick={handleOpenWhatsApp}>
-              <Send size={16} /> Open WhatsApp
-            </button>
-          </div>
-
-          {/* Direct Send to Candidate Box */}
+          {/* Searchable Candidate Selector Bar */}
           <div style={{
-            marginTop: '16px',
-            padding: '16px',
+            marginBottom: '14px',
+            padding: '12px 14px',
             borderRadius: '16px',
             backgroundColor: 'var(--color-bg-secondary)',
             border: '1px solid var(--color-border)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px'
+            gap: '8px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ⚡ One-Tap Send to Candidate
+              <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--color-text-secondary)' }}>
+                Target Recipient
               </span>
               <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
-                {candidates.length} in directory
+                {candidates.length} leads
               </span>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <select
-                className="input-field"
-                value={selectedCandidateId}
-                onChange={(e) => setSelectedCandidateId(e.target.value)}
-                style={{ flex: 1, minWidth: '180px', fontSize: '13px' }}
-              >
-                <option value="">-- Choose Candidate to Message --</option>
-                {candidates.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.type || 'Lead'} &bull; {c.location})
-                  </option>
-                ))}
-              </select>
+            {selectedCandidate ? (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                borderRadius: '12px',
+                backgroundColor: 'var(--color-bg-primary)',
+                border: '1px solid #25D366'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: '#25D366',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '11px'
+                  }}>
+                    {selectedCandidate.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--color-text-primary)' }}>
+                      {selectedCandidate.name}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+                      {selectedCandidate.type || 'Lead'} &bull; {selectedCandidate.location || 'Area'} &bull; {selectedCandidate.phone}
+                    </div>
+                  </div>
+                </div>
 
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    onClick={() => setIsCandidatePickerOpen(true)}
+                    className="btn btn-secondary"
+                    style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '8px' }}
+                  >
+                    Change
+                  </button>
+                  <button
+                    onClick={() => setSelectedCandidateId('')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--color-text-secondary)',
+                      cursor: 'pointer',
+                      padding: '4px'
+                    }}
+                    title="Remove selected candidate"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              </div>
+            ) : (
               <button
-                onClick={handleSendToCandidate}
-                disabled={!selectedCandidateId}
-                className="btn btn-primary"
+                onClick={() => setIsCandidatePickerOpen(true)}
                 style={{
-                  backgroundColor: selectedCandidateId ? '#25D366' : 'var(--color-border)',
-                  color: '#FFFFFF',
-                  borderColor: selectedCandidateId ? '#25D366' : 'transparent',
-                  padding: '10px 16px',
-                  borderRadius: '10px',
-                  opacity: selectedCandidateId ? 1 : 0.6,
-                  cursor: selectedCandidateId ? 'pointer' : 'not-allowed'
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  border: '1px dashed var(--color-border)',
+                  backgroundColor: 'var(--color-bg-primary)',
+                  color: 'var(--color-text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <Smartphone size={16} /> Send to Lead
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <User size={15} />
+                  <span>Choose candidate from directory...</span>
+                </div>
+                <ChevronRight size={15} />
               </button>
-            </div>
+            )}
           </div>
+
+          {/* WhatsApp Chat Bubble Live Preview */}
+          <WhatsAppBubblePreview
+            message={currentMessage}
+            isManualMode={isManualMode[activePreset]}
+            onManualEdit={handleManualEdit}
+            onCopy={handleCopy}
+            onSend={handleOpenWhatsApp}
+            onSendToCandidate={handleSendToCandidate}
+            candidateName={selectedCandidate?.name}
+            candidateRole={selectedCandidate?.type}
+          />
         </div>
       </div>
+
+      {/* MOBILE STICKY DOCK ACTION BAR (Pinned right above bottom nav on mobile) */}
+      <div className="draft-mobile-sticky-bar">
+        <button
+          onClick={() => setIsMobilePreviewOpen(true)}
+          style={{
+            flex: 1.2,
+            backgroundColor: 'rgba(37, 211, 102, 0.15)',
+            border: '1px solid rgba(37, 211, 102, 0.4)',
+            color: '#25D366',
+            borderRadius: '12px',
+            padding: '10px 12px',
+            fontWeight: 700,
+            fontSize: '12.5px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          <Eye size={15} />
+          <span>Preview ({currentMessage.length})</span>
+        </button>
+
+        <button
+          onClick={handleCopy}
+          style={{
+            backgroundColor: 'var(--color-bg-primary)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text-primary)',
+            borderRadius: '12px',
+            padding: '10px 14px',
+            fontWeight: 600,
+            fontSize: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          <Copy size={15} />
+          <span>Copy</span>
+        </button>
+
+        {selectedCandidate ? (
+          <button
+            onClick={handleSendToCandidate}
+            style={{
+              flex: 1.2,
+              backgroundColor: '#25D366',
+              border: 'none',
+              color: '#FFFFFF',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              fontWeight: 800,
+              fontSize: '12.5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            <Smartphone size={15} />
+            <span>Send: {selectedCandidate.name.split(' ')[0]}</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleOpenWhatsApp}
+            style={{
+              flex: 1.2,
+              backgroundColor: '#25D366',
+              border: 'none',
+              color: '#FFFFFF',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              fontWeight: 800,
+              fontSize: '12.5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            <Send size={15} />
+            <span>Open WA</span>
+          </button>
+        )}
+      </div>
+
+      {/* Slide-Up Candidate Search & Selector Modal */}
+      <CandidatePickerModal
+        isOpen={isCandidatePickerOpen}
+        onClose={() => setIsCandidatePickerOpen(false)}
+        candidates={candidates}
+        selectedId={selectedCandidateId}
+        onSelect={(c) => {
+          setSelectedCandidateId(c.id);
+          addToast('success', `Selected ${c.name} (${c.type || 'Lead'})`);
+        }}
+      />
+
+      {/* Slide-Up Live Mobile WhatsApp Preview Sheet */}
+      <MobileDraftPreviewSheet
+        isOpen={isMobilePreviewOpen}
+        onClose={() => setIsMobilePreviewOpen(false)}
+        message={currentMessage}
+        isManualMode={isManualMode[activePreset]}
+        onManualEdit={handleManualEdit}
+        onCopy={handleCopy}
+        onSend={handleOpenWhatsApp}
+        selectedCandidate={selectedCandidate}
+        onOpenCandidatePicker={() => setIsCandidatePickerOpen(true)}
+        onSendToCandidate={handleSendToCandidate}
+      />
+
+      {/* Draft History Modal (Last 5 Sent / Copied Drafts) */}
+      <DraftHistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        history={draftHistory}
+        onSelect={handleSelectHistoryItem}
+        onClear={handleClearHistory}
+        onCopy={handleCopy}
+      />
 
       {/* Payout & Margin Calculator Modal */}
       <PayoutCalculatorModal
