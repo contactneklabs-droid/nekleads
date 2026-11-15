@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Plus, User, MessageSquare, DownloadCloud, Settings, UserPlus, ChevronRight } from 'lucide-react';
 import { downloadInstantBackup } from '../lib/backup';
@@ -14,6 +14,8 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
   const { addToast } = useToast();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrollHidden, setIsScrollHidden] = useState(false);
+  const [isStretching, setIsStretching] = useState(false);
 
   const isDashboardActive = location.pathname === '/' || location.pathname === '/dashboard';
   const isPeopleActive = location.pathname.startsWith('/people') || location.pathname === '/volunteers' || location.pathname === '/manpower';
@@ -29,6 +31,45 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
   const activePosition: 'home' | 'people' = isPeopleActive ? 'people' : 'home';
   const notchX = activePosition === 'home' ? 34 : 186;
   const circleX = activePosition === 'home' ? 13 : 165;
+
+  // 1 & 2. Liquid Elastic Stretch & Hop detection on tab transition
+  const prevPosRef = useRef(activePosition);
+  useEffect(() => {
+    if (prevPosRef.current !== activePosition) {
+      setIsStretching(true);
+      const timer = setTimeout(() => setIsStretching(false), 380);
+      prevPosRef.current = activePosition;
+      return () => clearTimeout(timer);
+    }
+  }, [activePosition]);
+
+  // 4. Smart Scroll-Aware Hide & Reveal
+  const lastScrollY = useRef(0);
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      // Always show at top of page
+      if (currentY <= 30) {
+        setIsScrollHidden(false);
+        lastScrollY.current = currentY;
+        return;
+      }
+
+      const delta = currentY - lastScrollY.current;
+      if (delta > 8) {
+        // Scrolling down -> hide dock & close popover
+        setIsScrollHidden(true);
+        setIsMenuOpen(false);
+      } else if (delta < -6) {
+        // Scrolling up -> reveal dock
+        setIsScrollHidden(false);
+      }
+      lastScrollY.current = currentY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleInstantBackup = () => {
     try {
@@ -47,7 +88,7 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
 
   return (
     <>
-      {/* 1. Backdrop overlay when "+" menu is active */}
+      {/* Backdrop overlay when "+" menu is active */}
       {isMenuOpen && (
         <div 
           className="dock-menu-backdrop mobile-only"
@@ -55,7 +96,7 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
         />
       )}
 
-      {/* 2. Floating Quick Actions Card ("+" Menu) */}
+      {/* Floating Quick Actions Card ("+" Menu with 3. Staggered Cascade) */}
       <div className={`dock-action-popover mobile-only ${isMenuOpen ? 'open' : ''}`}>
         <div className="dock-popover-content">
           <div className="dock-popover-header">
@@ -64,7 +105,7 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
           </div>
 
           <div className="dock-popover-items">
-            {/* WhatsApp Drafts */}
+            {/* 1. WhatsApp Drafts */}
             <button 
               type="button"
               className="dock-popover-item"
@@ -80,7 +121,7 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
               <ChevronRight size={16} className="dock-item-chevron" />
             </button>
 
-            {/* Instant Backup (1-Tap) */}
+            {/* 2. Instant Backup (1-Tap) */}
             <button 
               type="button"
               className="dock-popover-item"
@@ -99,7 +140,7 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
               <ChevronRight size={16} className="dock-item-chevron" />
             </button>
 
-            {/* Settings */}
+            {/* 3. Settings */}
             <button 
               type="button"
               className="dock-popover-item"
@@ -115,7 +156,7 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
               <ChevronRight size={16} className="dock-item-chevron" />
             </button>
 
-            {/* Quick Add Lead */}
+            {/* 4. Quick Add Lead */}
             <button 
               type="button"
               className="dock-popover-item"
@@ -138,8 +179,11 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
         </div>
       </div>
 
-      {/* 3. Floating Monochrome Navigation Bar (Minimized Compact Size) */}
-      <nav className="monochrome-floating-nav mobile-only" aria-label="Mobile Navigation">
+      {/* Floating Monochrome Navigation Bar (with 4. Smart Scroll Hide & 1. Liquid Elastic Stretch) */}
+      <nav 
+        className={`monochrome-floating-nav mobile-only ${isScrollHidden ? 'scroll-hidden' : ''}`} 
+        aria-label="Mobile Navigation"
+      >
         <div className="dock-container">
           {/* SVG Animated Notched Pill Background */}
           <svg 
@@ -152,10 +196,8 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
           >
             <defs>
               <mask id="dock-notch-mask">
-                {/* Keep full pill surface */}
                 <rect x="0" y="0" width="220" height="48" rx="24" fill="white" />
                 
-                {/* Notch cutout group that smoothly slides horizontally between Home (34px) and People (186px) */}
                 <g 
                   className="notch-sliding-cutout"
                   style={{
@@ -164,14 +206,12 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
                   }}
                 >
                   <circle cx="0" cy="11" r="25" fill="black" />
-                  {/* Smooth concave side fillets */}
                   <path d="M -25 0 C -25 4 -21 8 -16 9 L -16 0 Z" fill="black" />
                   <path d="M 25 0 C 25 4 21 8 16 9 L 16 0 Z" fill="black" />
                 </g>
               </mask>
             </defs>
 
-            {/* Pill Dock Body with Cutout Mask */}
             <rect 
               x="0.5" 
               y="0.5" 
@@ -183,7 +223,7 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
             />
           </svg>
 
-          {/* Elevated Circular Highlight Bubble that glides smoothly to active tab */}
+          {/* Elevated Circular Bubble with 1. Liquid Elastic Stretch & 2. Icon Spring Hop */}
           <div 
             className="dock-elevated-circle-bubble"
             style={{
@@ -191,11 +231,13 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
               transition: 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)'
             }}
           >
-            {activePosition === 'home' ? (
-              <Home size={19} strokeWidth={2.4} className="dock-active-icon" />
-            ) : (
-              <User size={19} strokeWidth={2.4} className="dock-active-icon" />
-            )}
+            <div className={`dock-bubble-liquid-inner ${isStretching ? 'is-stretching' : 'is-settling'}`}>
+              {activePosition === 'home' ? (
+                <Home size={19} strokeWidth={2.4} className="dock-active-icon" />
+              ) : (
+                <User size={19} strokeWidth={2.4} className="dock-active-icon" />
+              )}
+            </div>
           </div>
 
           {/* Tab 1: Home Button (Left slot) */}

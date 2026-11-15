@@ -816,6 +816,27 @@ body.modal-open .modal-overlay {
     gap: 4px;
   }
 
+  /* 3. Staggered Cascade Entry Animation for "+" Menu Items */
+  .dock-action-popover.open .dock-popover-item {
+    animation: dockItemCascade 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .dock-action-popover.open .dock-popover-item:nth-child(1) { animation-delay: 0.03s; }
+  .dock-action-popover.open .dock-popover-item:nth-child(2) { animation-delay: 0.07s; }
+  .dock-action-popover.open .dock-popover-item:nth-child(3) { animation-delay: 0.11s; }
+  .dock-action-popover.open .dock-popover-item:nth-child(4) { animation-delay: 0.15s; }
+
+  @keyframes dockItemCascade {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.97);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
   .dock-popover-item {
     display: flex;
     align-items: center;
