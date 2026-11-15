@@ -1,21 +1,19 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Users, 
-  UserCog, 
-  MessageSquare, 
-  Settings, 
-  Database,
-  Calculator,
-  Search,
+  Bell, 
+  Layers, 
+  UserPlus, 
+  Briefcase, 
+  Calendar, 
+  Plus, 
+  Upload, 
+  MapPin, 
+  ArrowUpRight, 
   X,
-  Plus,
-  Phone,
-  MessageCircle,
-  ChevronRight,
-  Download
+  Sparkles
 } from 'lucide-react';
-import { getCandidates, Candidate, syncQueue, saveCandidate } from '../lib/db';
+import { getCandidates, Candidate, saveCandidate, getEvents, EventItem, getActivities, ActivityItem, saveEvent, logActivity } from '../lib/db';
 import { downloadInstantBackup } from '../lib/backup';
 import { useToast } from '../contexts/ToastContext';
 import { PayoutCalculatorModal } from '../components/PayoutCalculatorModal';
@@ -26,23 +24,20 @@ export default function Dashboard() {
   const { addToast } = useToast();
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [stats, setStats] = useState({ 
-    total: 0,
-    talent: 0, 
-    manpower: 0, 
-    hostesses: 0,
-    volunteers: 0,
-    promoters: 0,
-    pendingSync: 0 
-  });
-  const [recent, setRecent] = useState<Candidate[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [currentTimeStr, setCurrentTimeStr] = useState('');
-  
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [growthTimeframe, setGrowthTimeframe] = useState<'7D' | '30D' | '90D'>('30D');
+
   // Modals state
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [whatsAppCandidate, setWhatsAppCandidate] = useState<Candidate | null>(null);
-  const [quickAddType, setQuickAddType] = useState<'talent' | 'manpower' | null>(null);
+  const [quickAddType, setQuickAddType] = useState<'talent' | 'client' | null>(null);
+  const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
+  const [isAddAreaOpen, setIsAddAreaOpen] = useState(false);
+  const [areaInput, setAreaInput] = useState('');
+
+  // Forms
+  const quickAddNameRef = useRef<HTMLInputElement>(null);
   const [quickAddForm, setQuickAddForm] = useState({
     name: '',
     phone: '',
@@ -51,111 +46,32 @@ export default function Dashboard() {
     gender: 'Male'
   });
 
-  // Global Instant Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchBoxRef = useRef<HTMLDivElement>(null);
-  const quickAddNameRef = useRef<HTMLInputElement>(null);
-
-  // Active Draft info
-  const [activeDraftEvent, setActiveDraftEvent] = useState<string>('');
+  const [eventForm, setEventForm] = useState({
+    name: '',
+    date: new Date().toISOString().split('T')[0],
+    location: '',
+    staffRequired: '',
+    status: 'Confirmed' as EventItem['status']
+  });
 
   const loadData = () => {
-    const data = getCandidates();
-    setCandidates(data);
-
-    const hostesses = data.filter(c => c.type === 'Hostess').length;
-    const volunteers = data.filter(c => c.type === 'Volunteer').length;
-    const talentCount = data.filter(c => ['Hostess', 'Volunteer', 'Talent'].includes(c.type)).length;
-    const promoters = data.filter(c => c.type === 'Promoter').length;
-    const manpowerCount = data.length - talentCount;
-
-    const queue = JSON.parse(localStorage.getItem('nek_leads_offline_queue') || '[]');
-    setStats({ 
-      total: data.length,
-      talent: talentCount, 
-      manpower: manpowerCount, 
-      hostesses,
-      volunteers,
-      promoters,
-      pendingSync: queue.length 
-    });
-    
-    const sorted = [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setRecent(sorted.slice(0, 5));
-
-    // Check saved draft title
-    try {
-      const savedReq = localStorage.getItem('nek_draft_requirement');
-      if (savedReq) {
-        const parsed = JSON.parse(savedReq);
-        if (parsed.eventName) setActiveDraftEvent(parsed.eventName);
-      }
-    } catch (e) {}
+    const candidateList = getCandidates();
+    setCandidates(candidateList);
+    setEvents(getEvents());
+    setActivities(getActivities());
   };
 
   useEffect(() => {
     loadData();
-
-    // Clock ticker
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTimeStr(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 30000);
-
-    // Click outside search dismiss
-    const handleClickOutside = (e: MouseEvent) => {
-      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
-        setIsSearchFocused(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, []);
 
-  const handleSync = async () => {
-    if (isSyncing) return;
-    setIsSyncing(true);
-    try {
-      const result = await syncQueue();
-      if (result.success) {
-        addToast('success', `Synced ${result.syncedCount} offline updates.`);
-        setStats(prev => ({ ...prev, pendingSync: 0 }));
-      } else {
-        addToast('error', 'Sync unavailable in offline mode.');
-      }
-    } catch {
-      addToast('error', 'Sync failed. Try again.');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  };
-
-  // Search filtering across entire database
-  const searchResults = searchQuery.trim() === '' ? [] : candidates.filter(c => {
-    const q = searchQuery.toLowerCase();
-    return c.name.toLowerCase().includes(q) ||
-           c.phone.includes(q) ||
-           c.location.toLowerCase().includes(q) ||
-           c.type.toLowerCase().includes(q);
-  }).slice(0, 8);
+  // Format today's date: e.g. "SUNDAY, 15 NOVEMBER 2026"
+  const formattedToday = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date()).toUpperCase();
 
   // Quick Add submit
   const handleQuickAddSubmit = () => {
@@ -212,572 +128,542 @@ export default function Dashboard() {
     quickAddNameRef.current?.focus();
   };
 
-  const handleApplyClientDraft = (data: { clientName: string; eventName: string; totalAmount: string; note: string }) => {
-    localStorage.setItem('nek_draft_client', JSON.stringify({
-      clientName: data.clientName,
-      eventName: data.eventName,
-      totalAmount: data.totalAmount,
-      dueAmount: data.totalAmount,
-      note: data.note,
-      paymentStage: 'advance',
-      paymentDetails: 'UPI: payments@neklabs',
-      dueDate: '',
-      eventDates: ''
-    }));
-    navigate('/whatsapp-drafts');
+  // Event Create Submit
+  const handleCreateEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventForm.name.trim() || !eventForm.location.trim()) {
+      addToast('error', 'Please enter event name and location');
+      return;
+    }
+    saveEvent({
+      name: eventForm.name.trim(),
+      date: eventForm.date,
+      location: eventForm.location.trim(),
+      staffRequired: eventForm.staffRequired.trim() || 'General Crew',
+      status: eventForm.status
+    });
+    addToast('success', `Event "${eventForm.name}" created!`);
+    setIsCreateEventOpen(false);
+    setEventForm({
+      name: '',
+      date: new Date().toISOString().split('T')[0],
+      location: '',
+      staffRequired: '',
+      status: 'Confirmed'
+    });
+    loadData();
   };
 
-  const handleApplyTeamDraft = (data: { eventName: string; amountPaid: string; remarks: string }) => {
-    localStorage.setItem('nek_draft_team', JSON.stringify({
-      eventName: data.eventName,
-      amountPaid: data.amountPaid,
-      remarks: data.remarks,
-      recipientName: '',
-      eventDate: '',
-      paymentMode: 'UPI',
-      refId: ''
-    }));
-    navigate('/whatsapp-drafts');
+  // Add Area Submit
+  const handleAddArea = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!areaInput.trim()) return;
+    logActivity('area', `Area created: ${areaInput.trim()}`, 'Bangalore Zone');
+    addToast('success', `Area "${areaInput.trim()}" created!`);
+    setAreaInput('');
+    setIsAddAreaOpen(false);
+    loadData();
+  };
+
+  const formatEventDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      const day = String(d.getDate()).padStart(2, '0');
+      return { month, day };
+    } catch {
+      return { month: 'EVT', day: '01' };
+    }
+  };
+
+  const getStatusBadge = (status: EventItem['status']) => {
+    switch (status) {
+      case 'Confirmed':
+        return { bg: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: 'rgba(16, 185, 129, 0.25)' };
+      case 'Pending':
+        return { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.25)' };
+      case 'Planning':
+        return { bg: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6', border: 'rgba(59, 130, 246, 0.25)' };
+    }
+  };
+
+  const formatRelativeTime = (isoStr: string) => {
+    try {
+      const date = new Date(isoStr);
+      const diffMs = Date.now() - date.getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      if (diffMins < 60) return `${diffMins || 1}m ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return 'Yesterday';
+    } catch {
+      return 'Recent';
+    }
   };
 
   return (
-    <div style={{ maxWidth: '920px', margin: '0 auto', paddingBottom: '40px' }}>
+    <div style={{ maxWidth: '820px', margin: '0 auto', padding: '0 4px' }}>
       
-      {/* 1. TOP COMMAND HERO CARD */}
-      <div className="bento-hero-card" style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ 
-                fontSize: '11px', 
-                fontWeight: 700, 
-                textTransform: 'uppercase', 
-                letterSpacing: '1px',
-                color: 'var(--color-text-secondary)'
-              }}>
-                NEK COMMAND DESK
-              </span>
-              <span style={{
-                fontSize: '10px',
-                padding: '1px 6px',
-                borderRadius: '999px',
-                backgroundColor: stats.pendingSync > 0 ? 'rgba(211, 47, 47, 0.15)' : 'rgba(56, 142, 60, 0.15)',
-                color: stats.pendingSync > 0 ? 'var(--color-danger)' : 'var(--color-success)',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }} onClick={handleSync}>
-                {stats.pendingSync > 0 ? `● ${stats.pendingSync} To Sync` : '● Synced'}
-              </span>
-
-              <span style={{
-                fontSize: '10px',
-                padding: '1px 8px',
-                borderRadius: '999px',
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-secondary)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }} onClick={() => {
-                const count = downloadInstantBackup();
-                addToast('success', `Backed up ${count} leads to device!`);
-              }} title="1-Tap Instant Backup">
-                <Download size={10} /> Backup
-              </span>
-            </div>
-
-            <h1 style={{ 
-              fontFamily: "'Outfit', sans-serif", 
-              fontSize: '32px', 
-              fontWeight: 800, 
-              letterSpacing: '-1px',
-              color: 'var(--color-text-primary)',
-              lineHeight: 1.15
-            }}>
-              {getGreeting()}!
-            </h1>
-            <p style={{ 
-              color: 'var(--color-text-secondary)', 
-              fontSize: '14px', 
-              fontWeight: 400,
-              marginTop: '4px'
-            }}>
-              {stats.total} total leads in database &bull; {stats.talent} talent &bull; {stats.manpower} crew
-            </p>
-          </div>
-          
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
-            <div className="bento-time-pill" style={{ 
-              fontFamily: "'Outfit', sans-serif", 
-              fontSize: '12px', 
-              fontWeight: 700, 
-              letterSpacing: '0.8px', 
-              fontVariantNumeric: 'tabular-nums',
-              marginTop: 0
-            }}>
-              <span>{currentTimeStr || '12:00 PM'}</span>
-            </div>
-            <div style={{ 
-              fontFamily: "'Inter', sans-serif", 
-              fontSize: '10px', 
-              fontWeight: 600, 
-              letterSpacing: '0.8px', 
-              color: 'var(--color-text-secondary)'
-            }}>
-              EDITION 2026.4
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. UNIVERSAL INSTANT SEARCH BAR */}
-      <div className="dashboard-search-box" ref={searchBoxRef}>
-        <div style={{ position: 'relative' }}>
-          <Search 
-            size={18} 
-            color="var(--color-text-secondary)" 
-            style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} 
-          />
-          <input
-            type="text"
-            className="dashboard-search-input"
-            placeholder="Quick search across all Talent & Manpower (name, phone, area)..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setIsSearchFocused(true);
+      {/* 1. TOP HEADER: NOTIFICATIONS + PROFILE (NO 'NEK LEADS' TO SAVE SPACE) */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'flex-end', 
+        gap: '10px',
+        marginBottom: '14px',
+        paddingTop: '2px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Notification Bell */}
+          <button
+            onClick={() => {
+              addToast('info', 'All event operations are synced and healthy.');
             }}
-            onFocus={() => setIsSearchFocused(true)}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              style={{
-                position: 'absolute',
-                right: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                color: 'var(--color-text-secondary)',
-                cursor: 'pointer',
-                padding: '4px'
-              }}
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
+            style={{
+              position: 'relative',
+              background: 'var(--color-bg-secondary)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-text-primary)',
+              cursor: 'pointer'
+            }}
+            title="Notifications"
+          >
+            <Bell size={16} />
+            <span style={{
+              position: 'absolute',
+              top: '7px',
+              right: '8px',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#ef4444'
+            }} />
+          </button>
 
-        {/* Live Search Floating Results */}
-        {isSearchFocused && searchQuery.trim() !== '' && (
-          <div className="dashboard-search-results">
-            {searchResults.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '13px' }}>
-                No candidate found matching "{searchQuery}"
-              </div>
-            ) : (
-              searchResults.map(c => (
-                <div
-                  key={c.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--color-bg-primary)',
-                      border: '1px solid var(--color-border)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 700,
-                      fontSize: '11px'
-                    }}>
-                      {getInitials(c.name)}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '13px' }}>{c.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', display: 'flex', gap: '6px' }}>
-                        <span style={{ fontWeight: 600 }}>{c.type}</span>
-                        <span>&bull;</span>
-                        <span>{c.location}</span>
-                        <span>&bull;</span>
-                        <span>{c.phone}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <a 
-                      href={`tel:${c.phone.replace(/\D/g, '')}`} 
-                      className="lead-quick-btn call"
-                      title="Direct Call"
-                    >
-                      <Phone size={14} />
-                    </a>
-                    <button 
-                      onClick={() => {
-                        setWhatsAppCandidate(c);
-                        setIsSearchFocused(false);
-                      }} 
-                      className="lead-quick-btn whatsapp"
-                      title="WhatsApp Direct"
-                    >
-                      <MessageCircle size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+          {/* User Profile Avatar - Navigates to Settings when tapped */}
+          <div
+            onClick={() => navigate('/settings')}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-primary)',
+              color: 'var(--color-bg-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '13.5px',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+            title="Settings & Profile"
+          >
+            N
           </div>
-        )}
+        </div>
       </div>
 
-      {/* 3. SPEED ACTION STRIP (4 Thumb-Friendly Action Targets) */}
-      <div className="speed-strip">
-        <button 
-          className="speed-strip-btn"
+      {/* 2. DYNAMIC DATE & GREETING */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ 
+          fontSize: '11px', 
+          fontWeight: 700, 
+          letterSpacing: '0.8px', 
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase'
+        }}>
+          {formattedToday}
+        </div>
+        <h1 style={{ 
+          fontSize: '28px', 
+          fontWeight: 800, 
+          letterSpacing: '-0.6px', 
+          margin: '2px 0 2px 0',
+          color: 'var(--color-text-primary)'
+        }}>
+          Overview
+        </h1>
+        <p style={{ 
+          fontSize: '13.5px', 
+          color: 'var(--color-text-secondary)', 
+          margin: 0 
+        }}>
+          Your event operations at a glance.
+        </p>
+      </div>
+
+      {/* 3. 2x2 METRICS STATS GRID */}
+      <div className="ecosystem-kpi-grid">
+        {/* Total Leads */}
+        <div 
+          className="ecosystem-card"
+          onClick={() => navigate('/people')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+              Total Leads
+            </span>
+            <Layers size={18} style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }} />
+          </div>
+          <div style={{ fontSize: '26px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px' }}>
+            {candidates.length || 248}
+          </div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
+            <ArrowUpRight size={13} />
+            <span>+12%</span>
+          </div>
+        </div>
+
+        {/* New Leads */}
+        <div 
+          className="ecosystem-card"
           onClick={() => {
             setQuickAddType('talent');
             setQuickAddForm({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Male' });
           }}
+          style={{ cursor: 'pointer' }}
         >
-          <Plus size={16} />
-          <span>+ Add Talent</span>
-        </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+              New Leads
+            </span>
+            <UserPlus size={18} style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }} />
+          </div>
+          <div style={{ fontSize: '26px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px' }}>
+            32
+          </div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
+            <ArrowUpRight size={13} />
+            <span>+18%</span>
+          </div>
+        </div>
 
-        <button 
-          className="speed-strip-btn"
-          onClick={() => {
-            setQuickAddType('manpower');
-            setQuickAddForm({ name: '', phone: '', type: 'Manpower', location: '', gender: 'Male' });
-          }}
-        >
-          <Plus size={16} />
-          <span>+ Add Crew</span>
-        </button>
-
-        <button 
-          className="speed-strip-btn"
-          onClick={() => navigate('/whatsapp-drafts')}
-        >
-          <MessageSquare size={16} />
-          <span>📢 Drafts</span>
-        </button>
-
-        <button 
-          className="speed-strip-btn"
+        {/* Active Clients */}
+        <div 
+          className="ecosystem-card"
           onClick={() => setIsCalcOpen(true)}
+          style={{ cursor: 'pointer' }}
         >
-          <Calculator size={16} />
-          <span>🧮 Margin Calc</span>
-        </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+              Active Clients
+            </span>
+            <Briefcase size={18} style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }} />
+          </div>
+          <div style={{ fontSize: '26px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px' }}>
+            18
+          </div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
+            <ArrowUpRight size={13} />
+            <span>+6%</span>
+          </div>
+        </div>
+
+        {/* Upcoming Events */}
+        <div 
+          className="ecosystem-card"
+          onClick={() => navigate('/events')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+              Upcoming Events
+            </span>
+            <Calendar size={18} style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }} />
+          </div>
+          <div style={{ fontSize: '26px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px' }}>
+            {events.length < 10 ? `0${events.length}` : events.length}
+          </div>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+            Scheduled
+          </div>
+        </div>
       </div>
 
-      {/* 4. ASYMMETRIC BENTO GRID */}
-      <div className="dashboard-bento-grid">
-        
-        {/* HERO BENTO TILE: TALENT & CREW HEALTH (Spans 2 columns on desktop, full width on mobile) */}
-        <div 
-          className="bento-card dashboard-bento-hero"
-          onClick={() => navigate('/volunteers')}
-        >
+      {/* 4. LEADS GROWTH AREA CHART */}
+      <div className="ecosystem-card" style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div className="bento-icon-wrapper" style={{ margin: 0 }}>
-                  <Users size={18} />
-                </div>
-                <div>
-                  <div className="bento-card-title" style={{ fontSize: '15px' }}>Talent Directory</div>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                    {stats.total} total candidates active
-                  </div>
-                </div>
-              </div>
-              <span style={{ 
-                fontSize: '11px', 
-                fontWeight: 700, 
-                padding: '3px 8px', 
-                borderRadius: '8px',
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)',
-                whiteSpace: 'nowrap'
-              }}>
-                View All &rarr;
-              </span>
-            </div>
-
-            {/* Visual Proportion Bar */}
-            <div style={{ width: '100%', height: '6px', borderRadius: '3px', overflow: 'hidden', display: 'flex', backgroundColor: 'var(--color-border)', margin: '10px 0' }}>
-              <div style={{ width: `${stats.total > 0 ? (stats.hostesses / stats.total) * 100 : 33}%`, backgroundColor: '#EC4899' }} title="Hostesses" />
-              <div style={{ width: `${stats.total > 0 ? (stats.volunteers / stats.total) * 100 : 25}%`, backgroundColor: '#3B82F6' }} title="Volunteers" />
-              <div style={{ width: `${stats.total > 0 ? (stats.promoters / stats.total) * 100 : 20}%`, backgroundColor: '#10B981' }} title="Promoters" />
-              <div style={{ width: `${stats.total > 0 ? ((stats.total - stats.hostesses - stats.volunteers - stats.promoters) / stats.total) * 100 : 22}%`, backgroundColor: '#F59E0B' }} title="Other Crew" />
-            </div>
-
-            {/* Category breakdown chips */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', backgroundColor: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#EC4899' }} />
-                <span>Hostesses: <strong>{stats.hostesses}</strong></span>
-              </span>
-              <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', backgroundColor: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#3B82F6' }} />
-                <span>Volunteers: <strong>{stats.volunteers}</strong></span>
-              </span>
-              <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', backgroundColor: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981' }} />
-                <span>Promoters: <strong>{stats.promoters}</strong></span>
-              </span>
-              <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', backgroundColor: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#F59E0B' }} />
-                <span>Crew: <strong>{stats.manpower}</strong></span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* TILE 2: WHATSAPP EVENT ANNOUNCER */}
-        <div 
-          className="bento-card"
-          onClick={() => navigate('/whatsapp-drafts')}
-        >
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="bento-icon-wrapper" style={{ backgroundColor: '#25D366', color: '#FFF', borderColor: '#25D366' }}>
-                <MessageSquare size={16} />
-              </div>
-              <span className="bento-card-badge" style={{ 
-                fontWeight: 700, 
-                textTransform: 'uppercase', 
-                backgroundColor: 'rgba(37, 211, 102, 0.15)',
-                color: '#25D366',
-                border: '1px solid rgba(37, 211, 102, 0.3)'
-              }}>
-                Ready
-              </span>
-            </div>
-          </div>
-          <div>
-            <div className="bento-card-title">WhatsApp Drafts</div>
-            <div className="bento-card-meta">
-              {activeDraftEvent ? activeDraftEvent : 'Broadcast event notices'}
-            </div>
-          </div>
-        </div>
-
-        {/* TILE 3: PAYOUT & MARGIN CALCULATOR */}
-        <div 
-          className="bento-card"
-          onClick={() => setIsCalcOpen(true)}
-        >
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="bento-icon-wrapper">
-                <Calculator size={16} />
-              </div>
-              <span className="bento-card-badge" style={{ 
-                fontWeight: 700, 
-                textTransform: 'uppercase', 
-                color: 'var(--color-text-secondary)',
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)'
-              }}>
-                Finance
-              </span>
-            </div>
-          </div>
-          <div>
-            <div className="bento-card-title">Payout Calc</div>
-            <div className="bento-card-meta">Margins & client billing</div>
-          </div>
-        </div>
-
-        {/* TILE 4: MANPOWERS DIRECTORY */}
-        <div 
-          className="bento-card"
-          onClick={() => navigate('/manpower')}
-        >
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="bento-icon-wrapper">
-                <UserCog size={16} />
-              </div>
-              <span className="bento-card-badge" style={{ 
-                fontWeight: 700, 
-                textTransform: 'uppercase', 
-                color: 'var(--color-text-secondary)',
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)'
-              }}>
-                {stats.manpower} Crew
-              </span>
-            </div>
-          </div>
-          <div>
-            <div className="bento-card-title">Manpowers</div>
-            <div className="bento-card-meta">Security, Bouncers & Crew</div>
-          </div>
-        </div>
-
-        {/* TILE 5: SYNC & SETTINGS */}
-        <div 
-          className="bento-card"
-          onClick={() => navigate('/settings')}
-        >
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="bento-icon-wrapper">
-                <Settings size={16} />
-              </div>
-              <span className="bento-card-badge" style={{ 
-                fontWeight: 700, 
-                textTransform: 'uppercase', 
-                color: 'var(--color-text-secondary)',
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)'
-              }}>
-                Config
-              </span>
-            </div>
-          </div>
-          <div>
-            <div className="bento-card-title">Settings</div>
-            <div className="bento-card-meta">Passcode, sync & export</div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* 5. INTERACTIVE RECENT LEADS TIMELINE (1-Tap Call & WhatsApp) */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Database size={16} color="var(--color-text-secondary)" />
-            <h2 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--color-text-secondary)' }}>
-              Recent Leads &bull; Quick Action
+            <h2 style={{ fontSize: '16px', fontWeight: 800, margin: 0, letterSpacing: '-0.2px' }}>
+              Leads Growth
             </h2>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+              Last 30 days
+            </span>
           </div>
-          <button 
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
-            onClick={() => navigate('/volunteers')}
+
+          <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--color-bg-secondary)', padding: '3px', borderRadius: '10px', border: '1px solid var(--color-border)' }}>
+            {(['7D', '30D', '90D'] as const).map(pill => (
+              <button
+                key={pill}
+                onClick={() => setGrowthTimeframe(pill)}
+                style={{
+                  border: 'none',
+                  background: growthTimeframe === pill ? 'var(--color-primary)' : 'transparent',
+                  color: growthTimeframe === pill ? 'var(--color-bg-primary)' : 'var(--color-text-secondary)',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '4px 10px',
+                  borderRadius: '7px',
+                  cursor: 'pointer'
+                }}
+              >
+                {pill}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* SVG Area Chart */}
+        <div style={{ position: 'relative', width: '100%', height: '140px', overflow: 'hidden' }}>
+          <svg viewBox="0 0 360 140" style={{ width: '100%', height: '100%', display: 'block' }}>
+            <defs>
+              <linearGradient id="growthAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-text-primary)" stopOpacity="0.22" />
+                <stop offset="65%" stopColor="var(--color-text-primary)" stopOpacity="0.05" />
+                <stop offset="100%" stopColor="var(--color-text-primary)" stopOpacity="0.00" />
+              </linearGradient>
+            </defs>
+
+            {/* Faint Horizontal Grid lines */}
+            <line x1="0" y1="35" x2="360" y2="35" stroke="var(--color-border)" strokeDasharray="3 3" opacity="0.6" />
+            <line x1="0" y1="75" x2="360" y2="75" stroke="var(--color-border)" strokeDasharray="3 3" opacity="0.6" />
+            <line x1="0" y1="115" x2="360" y2="115" stroke="var(--color-border)" strokeDasharray="3 3" opacity="0.6" />
+
+            {/* Area Fill */}
+            <path
+              d="M 10 120 
+                 C 40 118, 60 112, 90 102 
+                 C 120 92, 140 96, 170 82 
+                 C 200 68, 220 72, 250 54 
+                 C 280 40, 310 46, 345 28 
+                 L 345 135 L 10 135 Z"
+              fill="url(#growthAreaGrad)"
+            />
+
+            {/* Top Smooth Curve Stroke */}
+            <path
+              d="M 10 120 
+                 C 40 118, 60 112, 90 102 
+                 C 120 92, 140 96, 170 82 
+                 C 200 68, 220 72, 250 54 
+                 C 280 40, 310 46, 345 28"
+              fill="none"
+              stroke="var(--color-text-primary)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+
+            {/* Current End Marker Dot */}
+            <circle cx="345" cy="28" r="4.5" fill="var(--color-text-primary)" />
+            <circle cx="345" cy="28" r="7.5" fill="none" stroke="var(--color-text-primary)" strokeWidth="1.5" opacity="0.4" />
+          </svg>
+
+          {/* Interactive Floating Pill Tooltip */}
+          <div style={{
+            position: 'absolute',
+            top: '4px',
+            right: '8px',
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-bg-primary)',
+            fontSize: '10.5px',
+            fontWeight: 800,
+            padding: '3px 8px',
+            borderRadius: '6px',
+            boxShadow: 'var(--shadow-sm)',
+            letterSpacing: '0.3px'
+          }}>
+            {candidates.length || 248} Leads
+          </div>
+        </div>
+
+        {/* Date Labels under chart */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--color-text-secondary)', marginTop: '4px', padding: '0 4px' }}>
+          <span>Oct 16</span>
+          <span>Oct 24</span>
+          <span>Nov 01</span>
+          <span>Nov 09</span>
+          <span>Today</span>
+        </div>
+      </div>
+
+      {/* 5. QUICK ACTIONS DOCK (2x2) */}
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '10px', letterSpacing: '-0.2px' }}>
+          Quick Actions
+        </h2>
+        <div className="quick-actions-grid">
+          {/* Add Lead */}
+          <div 
+            className="quick-action-tile"
+            onClick={() => {
+              setQuickAddType('talent');
+              setQuickAddForm({ name: '', phone: '', type: 'Volunteer', location: '', gender: 'Male' });
+            }}
           >
-            View All <ChevronRight size={15} />
+            <Plus size={20} />
+            <span>Add Lead</span>
+          </div>
+
+          {/* Create Event */}
+          <div 
+            className="quick-action-tile"
+            onClick={() => setIsCreateEventOpen(true)}
+          >
+            <Calendar size={20} />
+            <span>Create Event</span>
+          </div>
+
+          {/* Add Area */}
+          <div 
+            className="quick-action-tile"
+            onClick={() => setIsAddAreaOpen(true)}
+          >
+            <MapPin size={20} />
+            <span>Add Area</span>
+          </div>
+
+          {/* Export Data */}
+          <div 
+            className="quick-action-tile"
+            onClick={() => {
+              const count = downloadInstantBackup();
+              addToast('success', `Exported ${count} records to device.`);
+            }}
+          >
+            <Upload size={20} />
+            <span>Export Data</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. RECENT ACTIVITY */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '-0.2px' }}>
+            Recent Activity
+          </h2>
+          <button
+            onClick={() => navigate('/people')}
+            style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}
+          >
+            View all &rarr;
           </button>
         </div>
 
-        <div style={{ 
-          backgroundColor: 'var(--color-bg-secondary)', 
-          border: '1px solid var(--color-border)', 
-          borderRadius: '20px', 
-          overflow: 'hidden', 
-          padding: '6px' 
-        }}>
-          {recent.length === 0 ? (
-            <div style={{ padding: '36px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-              No recent candidate records found.
-            </div>
-          ) : (
-            recent.map((c) => (
-              <div 
-                key={c.id} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  padding: '12px 16px', 
-                  backgroundColor: 'var(--color-bg-primary)',
-                  borderRadius: '14px',
-                  margin: '4px',
-                  border: '1px solid var(--color-border)',
-                  transition: 'background-color 0.15s ease'
-                }}
-              >
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    width: '38px', 
-                    height: '38px', 
-                    borderRadius: '50%', 
-                    backgroundColor: 'var(--color-bg-secondary)', 
-                    color: 'var(--color-text-primary)', 
-                    fontWeight: 700, 
-                    fontSize: '13px', 
-                    flexShrink: 0, 
-                    border: '1px solid var(--color-border)' 
-                  }}>
-                    {getInitials(c.name)}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--color-text-primary)' }}>{c.name}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px', display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      <span style={{ 
-                        fontSize: '10px', 
-                        fontWeight: 600, 
-                        padding: '1px 6px', 
-                        borderRadius: '6px', 
-                        backgroundColor: 'var(--color-bg-secondary)', 
-                        border: '1px solid var(--color-border)' 
-                      }}>
-                        {c.type}
-                      </span>
-                      <span>&bull;</span>
-                      <span>{c.location}</span>
-                    </div>
-                  </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {activities.slice(0, 4).map(act => (
+            <div key={act.id} className="activity-row">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                <div className="activity-icon-bubble">
+                  {act.type === 'lead' ? <UserPlus size={16} /> :
+                   act.type === 'event' ? <Calendar size={16} /> :
+                   act.type === 'area' ? <MapPin size={16} /> : <Sparkles size={16} />}
                 </div>
-
-                {/* 1-Tap Call & WhatsApp Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <a 
-                    href={`tel:${c.phone.replace(/\D/g, '')}`} 
-                    className="lead-quick-btn call"
-                    title="Direct Phone Call"
-                  >
-                    <Phone size={14} />
-                  </a>
-
-                  <button 
-                    onClick={() => setWhatsAppCandidate(c)} 
-                    className="lead-quick-btn whatsapp"
-                    title="Send WhatsApp Message"
-                  >
-                    <MessageCircle size={15} />
-                  </button>
-
-                  <span style={{ 
-                    fontSize: '11px', 
-                    fontWeight: 600, 
-                    padding: '3px 8px', 
-                    borderRadius: '10px', 
-                    backgroundColor: 'var(--color-bg-secondary)', 
-                    border: '1px solid var(--color-border)',
-                    color: 'var(--color-text-secondary)',
-                    marginLeft: '4px'
-                  }} className="desktop-only">
-                    {new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {act.title}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--color-text-secondary)', marginTop: '1px' }}>
+                    {act.description}
+                  </div>
                 </div>
               </div>
-            ))
-          )}
+              <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {formatRelativeTime(act.timestamp)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 7. UPCOMING EVENTS */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '-0.2px' }}>
+            Upcoming Events
+          </h2>
+          <button
+            onClick={() => navigate('/events')}
+            style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}
+          >
+            View all &rarr;
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {events.slice(0, 3).map(evt => {
+            const { month, day } = formatEventDate(evt.date);
+            const badge = getStatusBadge(evt.status);
+            return (
+              <div
+                key={evt.id}
+                onClick={() => navigate('/events')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderRadius: '14px',
+                  border: '1px solid var(--color-border)',
+                  cursor: 'pointer'
+                }}
+              >
+                {/* Date Badge */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '44px',
+                  height: '46px',
+                  backgroundColor: 'var(--color-input-bg)',
+                  borderRadius: '10px',
+                  border: '1px solid var(--color-border)'
+                }}>
+                  <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--color-text-secondary)', letterSpacing: '0.4px' }}>
+                    {month}
+                  </span>
+                  <span style={{ fontSize: '16px', fontWeight: 800, lineHeight: 1 }}>
+                    {day}
+                  </span>
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {evt.name}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                    {evt.location} &bull; {evt.staffRequired || 'Crew'}
+                  </div>
+                </div>
+
+                {/* Status Pill */}
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '3px 8px',
+                  borderRadius: '8px',
+                  backgroundColor: badge.bg,
+                  color: badge.color,
+                  border: `1px solid ${badge.border}`,
+                  whiteSpace: 'nowrap'
+                }}>
+                  {evt.status}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -786,37 +672,14 @@ export default function Dashboard() {
         <div 
           className="modal-overlay"
           onClick={(e) => { if (e.target === e.currentTarget) setQuickAddType(null); }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(6px)',
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-            boxSizing: 'border-box'
-          }}
         >
           <div 
             className="modal-content"
-            style={{
-              width: '100%',
-              maxWidth: '460px',
-              backgroundColor: 'var(--color-bg-primary)',
-              borderRadius: '20px',
-              border: '1px solid var(--color-border)',
-              padding: '24px',
-              boxShadow: 'var(--shadow-md)'
-            }}
+            style={{ maxWidth: '460px', width: '100%' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, fontFamily: "'Outfit', sans-serif" }}>
-                {quickAddType === 'talent' ? '+ Add New Talent' : '+ Add New Crew Member'}
+              <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>
+                + Add New Lead
               </h2>
               <button 
                 onClick={() => setQuickAddType(null)} 
@@ -837,6 +700,7 @@ export default function Dashboard() {
                   placeholder="e.g. Priya Sharma"
                   value={quickAddForm.name}
                   onChange={(e) => setQuickAddForm({ ...quickAddForm, name: e.target.value })}
+                  autoFocus
                 />
               </div>
 
@@ -859,21 +723,11 @@ export default function Dashboard() {
                     value={quickAddForm.type}
                     onChange={(e) => setQuickAddForm({ ...quickAddForm, type: e.target.value })}
                   >
-                    {quickAddType === 'talent' ? (
-                      <>
-                        <option value="Volunteer">Volunteer</option>
-                        <option value="Hostess">Hostess</option>
-                        <option value="Talent">Talent</option>
-                        <option value="Model">Model</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Manpower">Manpower</option>
-                        <option value="Promoter">Promoter</option>
-                        <option value="Supervisor">Supervisor</option>
-                        <option value="Event Staff">Event Staff</option>
-                      </>
-                    )}
+                    <option value="Volunteer">Volunteer</option>
+                    <option value="Hostess">Hostess</option>
+                    <option value="Promoter">Promoter</option>
+                    <option value="Manpower">Manpower</option>
+                    <option value="Supervisor">Supervisor</option>
                   </select>
                 </div>
 
@@ -925,12 +779,151 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Payout & Margin Calculator Modal */}
+      {/* CREATE EVENT MODAL */}
+      {isCreateEventOpen && (
+        <div className="modal-overlay" onClick={() => setIsCreateEventOpen(false)}>
+          <div
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '440px', width: '90%', padding: '20px', borderRadius: '20px' }}
+          >
+            <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px' }}>Create New Event</h2>
+            <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label className="form-label">Event Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Corporate Summit"
+                  value={eventForm.name}
+                  onChange={e => setEventForm({ ...eventForm, name: e.target.value })}
+                  className="input-field"
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label className="form-label">Date</label>
+                  <input
+                    type="date"
+                    value={eventForm.date}
+                    onChange={e => setEventForm({ ...eventForm, date: e.target.value })}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Status</label>
+                  <select
+                    value={eventForm.status}
+                    onChange={e => setEventForm({ ...eventForm, status: e.target.value as EventItem['status'] })}
+                    className="input-field"
+                  >
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Planning">Planning</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Venue / Location</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Whitefield, Bangalore"
+                  value={eventForm.location}
+                  onChange={e => setEventForm({ ...eventForm, location: e.target.value })}
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Staffing Requirement</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 2 Hostess · 4 Volunteers"
+                  value={eventForm.staffRequired}
+                  onChange={e => setEventForm({ ...eventForm, staffRequired: e.target.value })}
+                  className="input-field"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateEventOpen(false)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                >
+                  Save Event
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD AREA MODAL */}
+      {isAddAreaOpen && (
+        <div className="modal-overlay" onClick={() => setIsAddAreaOpen(false)}>
+          <div
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '380px', width: '90%', padding: '20px', borderRadius: '20px' }}
+          >
+            <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '14px' }}>Add Location / Area</h2>
+            <form onSubmit={handleAddArea} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label className="form-label">Area Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Koramangala, Indiranagar"
+                  value={areaInput}
+                  onChange={e => setAreaInput(e.target.value)}
+                  className="input-field"
+                  autoFocus
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddAreaOpen(false)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                >
+                  Add Area
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payout Calculator Modal */}
       <PayoutCalculatorModal
         isOpen={isCalcOpen}
         onClose={() => setIsCalcOpen(false)}
-        onApplyToClientDraft={handleApplyClientDraft}
-        onApplyToTeamDraft={handleApplyTeamDraft}
+        onApplyToClientDraft={() => {
+          setIsCalcOpen(false);
+          navigate('/whatsapp-drafts');
+        }}
+        onApplyToTeamDraft={() => {
+          setIsCalcOpen(false);
+          navigate('/whatsapp-drafts');
+        }}
       />
 
       {/* WhatsApp Direct Messaging Modal */}

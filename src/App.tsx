@@ -1,23 +1,26 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, UserCog, MessageSquare, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Calendar, MoreHorizontal, MessageSquare, Settings, ChevronLeft } from 'lucide-react';
 import { ToastProvider } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { AppLockProvider } from './contexts/AppLockContext';
+import { MoreActionSheet } from './components/MoreActionSheet';
+import { PayoutCalculatorModal } from './components/PayoutCalculatorModal';
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const People = React.lazy(() => import('./pages/People'));
 const Volunteers = React.lazy(() => import('./pages/Volunteers'));
 const Manpower = React.lazy(() => import('./pages/Manpower'));
+const Events = React.lazy(() => import('./pages/Events'));
 const WhatsAppDrafts = React.lazy(() => import('./pages/WhatsAppDrafts'));
 const SettingsPage = React.lazy(() => import('./pages/Settings'));
-
-import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isCalcOpen, setIsCalcOpen] = useState(false);
 
   // iOS Native Edge-Swipe Back Gesture
   const touchStartRef = React.useRef<{ x: number; y: number; isEdge: boolean } | null>(null);
@@ -48,11 +51,13 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   // Format title for inner pages
   const getPageTitle = () => {
     switch (location.pathname) {
-      case '/volunteers': return 'Talent Directory';
-      case '/manpower': return 'Manpowers';
+      case '/people':
+      case '/volunteers': return 'People Hub';
+      case '/events': return 'Events & Schedule';
+      case '/manpower': return 'Manpower Directory';
       case '/whatsapp-drafts': return 'WhatsApp Drafts';
       case '/settings': return 'System Settings';
-      default: return 'NEK LEADS';
+      default: return 'Overview';
     }
   };
 
@@ -62,7 +67,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Desktop Sidebar: Only visible when NOT on dashboard */}
+      {/* Desktop Sidebar */}
       {!isDashboard && (
         <nav className="sidebar desktop-only">
           <div className="sidebar-header" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
@@ -71,15 +76,15 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="nav-links">
             <NavLink to="/dashboard" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
               <LayoutDashboard size={20} />
-              Dashboard
+              Overview
             </NavLink>
-            <NavLink to="/volunteers" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
+            <NavLink to="/people" className={({isActive}) => `nav-link ${isActive || location.pathname === '/volunteers' ? 'active' : ''}`}>
               <Users size={20} />
-              Talent
+              People
             </NavLink>
-            <NavLink to="/manpower" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
-              <UserCog size={20} />
-              Manpowers
+            <NavLink to="/events" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
+              <Calendar size={20} />
+              Events
             </NavLink>
             <NavLink to="/whatsapp-drafts" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
               <MessageSquare size={20} />
@@ -116,7 +121,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
               }}
             >
               <ChevronLeft size={20} />
-              <span>Dashboard</span>
+              <span>Back</span>
             </button>
 
             <div className="desktop-only" style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-text-secondary)' }}>
@@ -125,36 +130,55 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           </header>
         )}
 
-        <div className="page-content" style={{ paddingBottom: isDashboard ? '40px' : 'calc(90px + env(safe-area-inset-bottom))' }}>
+        <div className="page-content" style={{ paddingBottom: 'calc(84px + env(safe-area-inset-bottom))' }}>
           {children}
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation: Strictly hidden on Dashboard */}
-      {!isDashboard && (
-        <nav className="bottom-nav mobile-only">
-          <NavLink to="/dashboard" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
-            <LayoutDashboard size={20} />
-            <span>Home</span>
-          </NavLink>
-          <NavLink to="/volunteers" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
-            <Users size={20} />
-            <span>Talent</span>
-          </NavLink>
-          <NavLink to="/manpower" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
-            <UserCog size={20} />
-            <span>Manpowers</span>
-          </NavLink>
-          <NavLink to="/whatsapp-drafts" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
-            <MessageSquare size={20} />
-            <span>Drafts</span>
-          </NavLink>
-          <NavLink to="/settings" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
-            <Settings size={20} />
-            <span>Settings</span>
-          </NavLink>
-        </nav>
-      )}
+      {/* Mobile Bottom Navigation: 4 Core Ecosystem Hubs */}
+      <nav className="bottom-nav mobile-only">
+        <NavLink to="/dashboard" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
+          <LayoutDashboard size={20} />
+          <span>Home</span>
+        </NavLink>
+        <NavLink to="/people" className={({isActive}) => `bottom-nav-link ${isActive || location.pathname === '/volunteers' ? 'active' : ''}`}>
+          <Users size={20} />
+          <span>People</span>
+        </NavLink>
+        <NavLink to="/events" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
+          <Calendar size={20} />
+          <span>Events</span>
+        </NavLink>
+        <button 
+          onClick={() => setIsMoreOpen(true)}
+          className={`bottom-nav-link ${isMoreOpen ? 'active' : ''}`}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        >
+          <MoreHorizontal size={20} />
+          <span>More</span>
+        </button>
+      </nav>
+
+      {/* Slide-Up More Actions Hub */}
+      <MoreActionSheet
+        isOpen={isMoreOpen}
+        onClose={() => setIsMoreOpen(false)}
+        onOpenCalculator={() => setIsCalcOpen(true)}
+      />
+
+      {/* Payout Calculator Modal */}
+      <PayoutCalculatorModal
+        isOpen={isCalcOpen}
+        onClose={() => setIsCalcOpen(false)}
+        onApplyToClientDraft={() => {
+          setIsCalcOpen(false);
+          navigate('/whatsapp-drafts');
+        }}
+        onApplyToTeamDraft={() => {
+          setIsCalcOpen(false);
+          navigate('/whatsapp-drafts');
+        }}
+      />
     </div>
   );
 };
@@ -220,7 +244,9 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/people" element={<People />} />
                   <Route path="/volunteers" element={<Volunteers />} />
+                  <Route path="/events" element={<Events />} />
                   <Route path="/manpower" element={<Manpower />} />
                   <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
                   <Route path="/settings" element={<SettingsPage />} />

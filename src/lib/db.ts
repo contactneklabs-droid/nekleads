@@ -11,8 +11,84 @@ export interface Candidate {
   syncStatus?: 'synced' | 'pending';
 }
 
+export interface EventItem {
+  id: string;
+  name: string;
+  date: string; // "2026-11-27"
+  location: string;
+  staffRequired?: string;
+  status: 'Confirmed' | 'Pending' | 'Planning';
+  createdAt: string;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: 'lead' | 'event' | 'area' | 'backup';
+  title: string;
+  description: string;
+  timestamp: string;
+}
+
 const STORAGE_KEY = 'nek_leads_candidates';
 const QUEUE_KEY = 'nek_leads_offline_queue';
+const EVENTS_KEY = 'nek_leads_events';
+const ACTIVITIES_KEY = 'nek_leads_activities';
+
+export const logActivity = (type: ActivityItem['type'], title: string, description: string) => {
+  try {
+    const list = getActivities();
+    const item: ActivityItem = {
+      id: uuidv4(),
+      type,
+      title,
+      description,
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify([item, ...list].slice(0, 20)));
+  } catch (e) {}
+};
+
+export const getActivities = (): ActivityItem[] => {
+  const data = localStorage.getItem(ACTIVITIES_KEY);
+  if (data) return JSON.parse(data);
+  const initial: ActivityItem[] = [
+    { id: '1', type: 'lead', title: 'New client lead added', description: 'Photography · Bangalore', timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
+    { id: '2', type: 'event', title: 'Volunteer assigned', description: 'Event · Whitefield', timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
+    { id: '3', type: 'area', title: 'Area created', description: 'Indiranagar', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+    { id: '4', type: 'event', title: 'Event updated', description: '27 Nov · 2 Hostess · Guest Welcome', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 28).toISOString() }
+  ];
+  localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(initial));
+  return initial;
+};
+
+export const getEvents = (): EventItem[] => {
+  const data = localStorage.getItem(EVENTS_KEY);
+  if (data) return JSON.parse(data);
+  const initial: EventItem[] = [
+    { id: 'ev-1', name: 'Corporate Event', date: '2026-11-27', location: 'Bangalore', staffRequired: '2 Hostess', status: 'Confirmed', createdAt: new Date().toISOString() },
+    { id: 'ev-2', name: 'Product Launch', date: '2026-11-30', location: 'Whitefield', staffRequired: '4 Volunteers', status: 'Pending', createdAt: new Date().toISOString() },
+    { id: 'ev-3', name: 'Private Event', date: '2026-12-05', location: 'Indiranagar', staffRequired: '3 Hostess', status: 'Planning', createdAt: new Date().toISOString() }
+  ];
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(initial));
+  return initial;
+};
+
+export const saveEvent = (event: Omit<EventItem, 'id' | 'createdAt'>): EventItem => {
+  const newEv: EventItem = {
+    ...event,
+    id: uuidv4(),
+    createdAt: new Date().toISOString()
+  };
+  const list = getEvents();
+  localStorage.setItem(EVENTS_KEY, JSON.stringify([newEv, ...list]));
+  logActivity('event', `Event created: ${newEv.name}`, `${newEv.location} · ${newEv.staffRequired || 'General'}`);
+  return newEv;
+};
+
+export const deleteEvent = (id: string) => {
+  const list = getEvents();
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(list.filter(e => e.id !== id)));
+};
 
 // Basic wrapper around local storage
 export const getCandidates = (): Candidate[] => {
@@ -45,6 +121,7 @@ export const saveCandidate = (candidate: Omit<Candidate, 'id' | 'createdAt' | 's
   
   // Push to offline queue
   pushToQueue({ type: 'CREATE', payload: newCandidate });
+  logActivity('lead', 'New lead added', `${newCandidate.name} · ${newCandidate.location || newCandidate.type}`);
   
   return newCandidate;
 };

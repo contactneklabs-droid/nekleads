@@ -36,3 +36,4 @@ export const LeadCardSkeleton: React.FC<LeadCardSkeletonProps> = ({ count = 4 })
     </div>
   );
 };
+

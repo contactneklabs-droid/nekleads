@@ -22,3 +22,4 @@ export const downloadInstantBackup = (): number => {
 
   return data.length;
 };
+

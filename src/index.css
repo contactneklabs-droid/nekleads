@@ -1059,4 +1059,83 @@ body.modal-open .modal-overlay {
   gap: 14px;
 }
 
+/* ==========================================================================
+   NEK LEADS ECOSYSTEM DESIGN SYSTEM
+   ========================================================================== */
+.ecosystem-card {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 16px;
+  position: relative;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.ecosystem-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 769px) {
+  .ecosystem-kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.quick-action-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.quick-action-tile:active {
+  transform: scale(0.97);
+  background-color: var(--color-input-bg);
+}
+
+.activity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background-color: var(--color-bg-secondary);
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  gap: 12px;
+}
+
+.activity-icon-bubble {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-primary);
+}
+
+
 
