@@ -206,13 +206,23 @@ const App = () => {
       }
     }, 120);
 
-    // 2. Freeze background completely whenever any popup or modal occurs
+    // 2. Freeze background completely whenever any popup or modal occurs (prevents iOS scroll shifts)
+    let savedScrollY = 0;
     const checkModalState = () => {
       const hasModal = document.querySelector('.modal-overlay') !== null;
       if (hasModal) {
-        document.body.classList.add('modal-open');
+        if (!document.body.classList.contains('modal-open')) {
+          savedScrollY = window.scrollY;
+          document.body.style.top = `-${savedScrollY}px`;
+          document.body.classList.add('modal-open');
+        }
       } else {
-        document.body.classList.remove('modal-open');
+        if (document.body.classList.contains('modal-open')) {
+          document.body.classList.remove('modal-open');
+      document.body.style.top = '';
+          document.body.style.top = '';
+          window.scrollTo(0, savedScrollY);
+        }
       }
     };
 
@@ -238,6 +248,7 @@ const App = () => {
       observer.disconnect();
       document.removeEventListener('touchmove', handleTouchMove);
       document.body.classList.remove('modal-open');
+      document.body.style.top = '';
     };
   }, []);
 
