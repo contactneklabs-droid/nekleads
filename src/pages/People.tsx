@@ -7,11 +7,6 @@ import {
   Sparkles, 
   Wrench, 
   Filter, 
-  MoreHorizontal, 
-  Phone, 
-  MessageCircle, 
-  Edit3, 
-  Trash2, 
   X,
   ChevronLeft,
   ChevronRight
@@ -21,6 +16,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { WhatsAppDirectModal } from '../components/WhatsAppDirectModal';
 import { LeadCardSkeleton } from '../components/LeadCardSkeleton';
+import { SwipeableLeadCard } from '../components/SwipeableLeadCard';
 
 export default function People() {
   const { addToast } = useToast();
@@ -40,7 +36,7 @@ export default function People() {
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
-  const [activeActionCandidate, setActiveActionCandidate] = useState<Candidate | null>(null);
+  const [openSwipeCardId, setOpenSwipeCardId] = useState<string | null>(null);
   const [whatsAppCandidate, setWhatsAppCandidate] = useState<Candidate | null>(null);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -120,7 +116,7 @@ export default function People() {
   };
 
   const handleEdit = (c: Candidate) => {
-    setActiveActionCandidate(null);
+    setOpenSwipeCardId(null);
     setEditingCandidate(c);
     setForm({
       name: c.name,
@@ -133,7 +129,7 @@ export default function People() {
   };
 
   const handleDelete = async (c: Candidate) => {
-    setActiveActionCandidate(null);
+    setOpenSwipeCardId(null);
     const ok = await confirm({
       title: 'Delete record?',
       description: `Are you sure you want to remove ${c.name} from the directory?`,
@@ -444,65 +440,22 @@ export default function People() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingBottom: '70px' }}>
           {paginated.map(c => (
-            <div
+            <SwipeableLeadCard
               key={c.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 14px',
-                backgroundColor: 'var(--color-bg-primary)',
-                borderRadius: '16px',
-                border: '1px solid var(--color-border)',
-                boxShadow: 'var(--shadow-sm)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                {/* Circular Avatar with Initials */}
-                <div style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  border: '1px solid var(--color-border)',
-                  color: 'var(--color-text-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '13.5px',
-                  flexShrink: 0
-                }}>
-                  {getInitials(c.name)}
-                </div>
-
-                {/* Name & Role · Area */}
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.type} &bull; {c.location}
-                  </div>
-                </div>
-              </div>
-
-              {/* Action 3-dots Button */}
-              <button
-                onClick={() => setActiveActionCandidate(c)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-text-secondary)',
-                  padding: '8px',
-                  cursor: 'pointer',
-                  borderRadius: '8px'
-                }}
-                title="Options"
-              >
-                <MoreHorizontal size={20} />
-              </button>
-            </div>
+              id={c.id}
+              name={c.name}
+              phone={c.phone}
+              type={c.type}
+              location={c.location}
+              gender={c.gender}
+              isOpen={openSwipeCardId === c.id}
+              onOpen={() => setOpenSwipeCardId(c.id)}
+              onClose={() => { if (openSwipeCardId === c.id) setOpenSwipeCardId(null); }}
+              onEdit={() => handleEdit(c)}
+              onDelete={() => handleDelete(c)}
+              onWhatsApp={() => setWhatsAppCandidate(c)}
+              getInitials={getInitials}
+            />
           ))}
 
           {/* Pagination bar */}
@@ -569,134 +522,7 @@ export default function People() {
         <Plus size={24} />
       </button>
 
-      {/* PERSON CONTEXT ACTION SHEET (Tapped •••) */}
-      {activeActionCandidate && (
-        <div 
-          className="modal-overlay" 
-          onClick={() => setActiveActionCandidate(null)}
-          style={{ zIndex: 3500 }}
-        >
-          <div 
-            className="modal-content"
-            onClick={e => e.stopPropagation()}
-            style={{ maxWidth: '420px', width: '100%', borderRadius: '24px 24px 0 0' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <div style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '14px'
-              }}>
-                {getInitials(activeActionCandidate.name)}
-              </div>
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>
-                  {activeActionCandidate.name}
-                </h3>
-                <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-                  {activeActionCandidate.type} &bull; {activeActionCandidate.phone}
-                </span>
-              </div>
-            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* WhatsApp */}
-              <button
-                onClick={() => {
-                  setWhatsAppCandidate(activeActionCandidate);
-                  setActiveActionCandidate(null);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(37, 211, 102, 0.1)',
-                  color: '#25D366',
-                  border: '1px solid rgba(37, 211, 102, 0.25)',
-                  fontWeight: 700,
-                  fontSize: '13.5px',
-                  cursor: 'pointer'
-                }}
-              >
-                <MessageCircle size={18} />
-                <span>Message on WhatsApp</span>
-              </button>
-
-              {/* Direct Call */}
-              <a
-                href={`tel:${activeActionCandidate.phone.replace(/\D/g, '')}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text-primary)',
-                  border: '1px solid var(--color-border)',
-                  fontWeight: 600,
-                  fontSize: '13.5px',
-                  textDecoration: 'none'
-                }}
-              >
-                <Phone size={18} />
-                <span>Direct Phone Call</span>
-              </a>
-
-              {/* Edit */}
-              <button
-                onClick={() => handleEdit(activeActionCandidate)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text-primary)',
-                  border: '1px solid var(--color-border)',
-                  fontWeight: 600,
-                  fontSize: '13.5px',
-                  cursor: 'pointer'
-                }}
-              >
-                <Edit3 size={18} />
-                <span>Edit Lead Details</span>
-              </button>
-
-              {/* Delete */}
-              <button
-                onClick={() => handleDelete(activeActionCandidate)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                  color: '#ef4444',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  fontWeight: 600,
-                  fontSize: '13.5px',
-                  cursor: 'pointer'
-                }}
-              >
-                <Trash2 size={18} />
-                <span>Delete from Directory</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ADD / EDIT PERSON MODAL */}
       {isAddModalOpen && (

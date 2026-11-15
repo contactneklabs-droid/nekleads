@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Trash2, Edit3 } from 'lucide-react';
+import { Trash2, Edit3, MessageCircle } from 'lucide-react';
 
 export interface SwipeableLeadCardProps {
   id?: string;
@@ -21,12 +21,50 @@ export interface SwipeableLeadCardProps {
   getInitials: (name: string) => string;
 }
 
+export const getRoleColors = (type?: string) => {
+  const t = (type || '').toLowerCase();
+  if (t === 'hostess') {
+    return {
+      avatarBg: 'rgba(236, 72, 153, 0.14)',
+      avatarBorder: 'rgba(236, 72, 153, 0.35)',
+      color: '#db2777', // Pink
+      badgeBg: 'rgba(236, 72, 153, 0.1)',
+      badgeBorder: 'rgba(236, 72, 153, 0.25)'
+    };
+  }
+  if (t === 'volunteer') {
+    return {
+      avatarBg: 'rgba(30, 64, 175, 0.14)',
+      avatarBorder: 'rgba(30, 64, 175, 0.35)',
+      color: '#1e40af', // Dark Blue
+      badgeBg: 'rgba(30, 64, 175, 0.1)',
+      badgeBorder: 'rgba(30, 64, 175, 0.25)'
+    };
+  }
+  if (t === 'manpower') {
+    return {
+      avatarBg: 'var(--color-bg-secondary)',
+      avatarBorder: 'var(--color-primary)',
+      color: 'var(--color-primary)', // Black in light mode, White in dark mode
+      badgeBg: 'var(--color-bg-secondary)',
+      badgeBorder: 'var(--color-border)'
+    };
+  }
+  // Default / Other
+  return {
+    avatarBg: 'var(--color-bg-secondary)',
+    avatarBorder: 'var(--color-border)',
+    color: 'var(--color-text-primary)',
+    badgeBg: 'var(--color-bg-secondary)',
+    badgeBorder: 'var(--color-border)'
+  };
+};
+
 export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
   name,
   phone,
   type,
   location,
-  gender,
   isSelected = false,
   isSelectionMode = false,
   isOpen = false,
@@ -39,22 +77,16 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
   onWhatsApp,
   getInitials
 }) => {
-  const [translateX, setTranslateX] = useState(isOpen ? -140 : 0);
+  const [translateX, setTranslateX] = useState(isOpen ? -136 : 0);
   const [isDragging, setIsDragging] = useState(false);
-  const [isPressing, setIsPressing] = useState(false);
 
   const touchStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startTranslateX = useRef(0);
   const gestureDirection = useRef<'undecided' | 'horizontal' | 'vertical'>('undecided');
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasTriggeredLongPress = useRef(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      setTranslateX(0);
-    } else {
-      setTranslateX(-140);
-    }
+    setTranslateX(isOpen ? -136 : 0);
   }, [isOpen]);
 
   const clearLongPress = () => {
@@ -62,7 +94,6 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-    setIsPressing(false);
   };
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
@@ -72,21 +103,9 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
     touchStartPos.current = { x: clientX, y: clientY };
     startTranslateX.current = translateX;
     gestureDirection.current = 'undecided';
-    hasTriggeredLongPress.current = false;
     setIsDragging(true);
-    setIsPressing(true);
 
-    // iOS WhatsApp style long-press detection (450ms)
     longPressTimer.current = setTimeout(() => {
-      hasTriggeredLongPress.current = true;
-      setIsPressing(false);
-      try {
-        if ('vibrate' in navigator) {
-          navigator.vibrate?.(45);
-        }
-      } catch (err) {
-        // Safe fallback
-      }
       onLongPress?.();
     }, 450);
   };
@@ -100,12 +119,10 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
     const diffX = clientX - touchStartPos.current.x;
     const diffY = clientY - touchStartPos.current.y;
 
-    // Movement threshold cancels long-press
     if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
       clearLongPress();
     }
 
-    // Determine direction
     if (gestureDirection.current === 'undecided') {
       if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 6) {
         gestureDirection.current = 'vertical';
@@ -116,18 +133,17 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
     }
 
     if (gestureDirection.current === 'horizontal') {
-      // Swiping horizontally
       const target = startTranslateX.current + diffX;
       if (target <= 0) {
-        if (target >= -140) {
+        if (target >= -136) {
           setTranslateX(target);
         } else {
-          // Rubber banding beyond -140px
-          setTranslateX(-140 + (target + 140) * 0.22);
+          // Rubber banding past -136px
+          setTranslateX(-136 + (target + 136) * 0.2);
         }
       } else {
-        // Rubber banding to the right
-        setTranslateX(target * 0.18);
+        // Rubber banding to right
+        setTranslateX(target * 0.2);
       }
     }
   };
@@ -136,20 +152,10 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
     clearLongPress();
     setIsDragging(false);
 
-    if (hasTriggeredLongPress.current) {
-      hasTriggeredLongPress.current = false;
-      return;
-    }
-
     if (gestureDirection.current === 'horizontal') {
-      if (translateX < -65) {
+      if (translateX < -60) {
         // Snap open
-        setTranslateX(-140);
-        try {
-          if ('vibrate' in navigator) {
-            navigator.vibrate?.(15);
-          }
-        } catch (e) {}
+        setTranslateX(-136);
         onOpen?.();
       } else {
         // Snap closed
@@ -157,13 +163,11 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
         onClose?.();
       }
     } else if (gestureDirection.current === 'undecided') {
-      // Clean tap without dragging
       if (startTranslateX.current < -20) {
         // Tapped while open -> close
         setTranslateX(0);
         onClose?.();
       } else if (isSelectionMode) {
-        // Tapped in selection mode -> toggle
         onToggleSelect?.();
       }
     }
@@ -171,24 +175,7 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
     gestureDirection.current = 'undecided';
   };
 
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setTranslateX(0);
-    onClose?.();
-    onEdit();
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setTranslateX(0);
-    onClose?.();
-    onDelete();
-  };
-
-  const handleWhatsAppClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onWhatsApp();
-  };
+  const roleColors = getRoleColors(type);
 
   return (
     <div
@@ -200,7 +187,8 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
         touchAction: 'pan-y',
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        backgroundColor: 'var(--color-bg-secondary)'
+        backgroundColor: 'var(--color-bg-secondary)',
+        marginBottom: '2px'
       }}
     >
       {/* BACKGROUND ACTION DRAWER (Revealed upon swiping left) */}
@@ -210,55 +198,65 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
           top: 0,
           bottom: 0,
           right: 0,
-          width: '140px',
+          width: '136px',
           display: 'flex',
           zIndex: 1
         }}
       >
         {/* EDIT ACTION BUTTON */}
         <button
-          onClick={handleEditClick}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTranslateX(0);
+            onClose?.();
+            onEdit();
+          }}
           aria-label={`Edit ${name}`}
           style={{
             flex: 1,
-            backgroundColor: '#2C2C2E',
+            backgroundColor: '#1e293b',
             color: '#FFFFFF',
             border: 'none',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '4px',
+            gap: '3px',
             cursor: 'pointer',
-            padding: 0,
-            transition: 'background-color 0.15s ease'
+            padding: 0
           }}
         >
-          <Edit3 size={18} />
-          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.2px' }}>Edit</span>
+          <Edit3 size={17} />
+          <span style={{ fontSize: '11px', fontWeight: 700 }}>Edit</span>
         </button>
 
         {/* DELETE ACTION BUTTON */}
         <button
-          onClick={handleDeleteClick}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTranslateX(0);
+            onClose?.();
+            onDelete();
+          }}
           aria-label={`Delete ${name}`}
           style={{
             flex: 1,
-            backgroundColor: '#FF3B30',
+            backgroundColor: '#ef4444',
             color: '#FFFFFF',
             border: 'none',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '4px',
+            gap: '3px',
             cursor: 'pointer',
-            padding: 0,
-            transition: 'background-color 0.15s ease'
+            padding: 0
           }}
         >
-          <Trash2 size={18} />
-          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.2px' }}>Delete</span>
+          <Trash2 size={17} />
+          <span style={{ fontSize: '11px', fontWeight: 700 }}>Delete</span>
         </button>
       </div>
 
@@ -277,142 +275,103 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
           backgroundColor: 'var(--color-bg-primary)',
           border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
           borderRadius: '16px',
-          padding: '16px',
+          padding: '12px 14px',
           boxSizing: 'border-box',
           boxShadow: isSelected ? '0 0 0 1px var(--color-primary)' : 'var(--shadow-sm)',
-          transform: `translateX(${translateX}px) scale(${isPressing ? 0.985 : 1})`,
-          transition: isDragging ? 'transform 0.05s ease-out' : 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)',
+          transform: `translateX(${translateX}px)`,
+          transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           cursor: isSelectionMode ? 'pointer' : 'default'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, minWidth: 0 }}>
-            {/* Avatar Circle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          {/* Avatar Circle with Role-Based Theme */}
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              backgroundColor: roleColors.avatarBg,
+              border: `1.5px solid ${roleColors.avatarBorder}`,
+              color: roleColors.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '13.5px',
+              flexShrink: 0
+            }}
+          >
+            {getInitials(name)}
+          </div>
+
+          {/* Name & Role · Location */}
+          <div style={{ minWidth: 0 }}>
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-primary)',
-                color: 'var(--color-bg-primary)',
+                fontSize: '14.5px',
                 fontWeight: 700,
-                fontSize: '13px',
-                flexShrink: 0
+                color: 'var(--color-text-primary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
               }}
             >
-              {getInitials(name)}
+              {name}
             </div>
-
-            {/* Name and Phone */}
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: '15px',
-                  color: 'var(--color-text-primary)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}
-              >
-                {name}
-              </div>
-              <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '1px' }}>
-                {phone}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick WhatsApp Button (1-tap direct action) */}
-          <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
-            <button
-              onClick={handleWhatsAppClick}
-              aria-label={`WhatsApp ${name}`}
+            <div
               style={{
-                background: 'none',
-                border: 'none',
-                color: '#25D366',
-                padding: '8px',
+                fontSize: '12px',
+                color: 'var(--color-text-secondary)',
+                marginTop: '2px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                borderRadius: '50%'
+                gap: '5px'
               }}
             >
-              <MessageCircle size={22} />
-            </button>
+              <span style={{ fontWeight: 700, color: roleColors.color }}>{type}</span>
+              <span>&bull;</span>
+              <span>{location}</span>
+              {phone && (
+                <>
+                  <span>&bull;</span>
+                  <span style={{ opacity: 0.85 }}>{phone}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Tags / Badges container */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            borderTop: '1px solid var(--color-border)',
-            paddingTop: '12px'
+        {/* Quick WhatsApp Action (Direct 1-tap) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onWhatsApp();
           }}
+          aria-label={`WhatsApp ${name}`}
+          style={{
+            background: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border)',
+            color: '#10b981',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0
+          }}
+          title="Message on WhatsApp"
         >
-          <span
-            style={{
-              padding: '3px 8px',
-              borderRadius: '6px',
-              fontSize: '11px',
-              backgroundColor: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
-              fontWeight: 600,
-              color: 'var(--color-text-primary)'
-            }}
-          >
-            {type}
-          </span>
-          {gender && (
-            <span
-              style={{
-                padding: '3px 8px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                fontWeight: 600,
-                backgroundColor: gender.toLowerCase() === 'male'
-                  ? 'rgba(30, 58, 138, 0.28)'
-                  : gender.toLowerCase() === 'female'
-                  ? 'rgba(236, 72, 153, 0.2)'
-                  : 'var(--color-bg-secondary)',
-                border: '1px solid',
-                borderColor: gender.toLowerCase() === 'male'
-                  ? '#1d4ed8'
-                  : gender.toLowerCase() === 'female'
-                  ? '#ec4899'
-                  : 'var(--color-border)',
-                color: gender.toLowerCase() === 'male'
-                  ? '#60a5fa'
-                  : gender.toLowerCase() === 'female'
-                  ? '#f472b6'
-                  : 'var(--color-text-secondary)'
-              }}
-            >
-              {gender}
-            </span>
-          )}
-          <span
-            style={{
-              padding: '3px 8px',
-              borderRadius: '6px',
-              fontSize: '11px',
-              backgroundColor: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-secondary)'
-            }}
-          >
-            📍 {location}
-          </span>
-        </div>
+          <MessageCircle size={18} />
+        </button>
       </div>
     </div>
   );
