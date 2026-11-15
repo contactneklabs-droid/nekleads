@@ -87,21 +87,21 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main Content Area */}
       <main className="main-content">
-        {/* Unified 1-Line Compact Topbar */}
-        <header className="topbar" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 'calc(48px + env(safe-area-inset-top))',
-          paddingTop: 'env(safe-area-inset-top)',
-          paddingLeft: '16px',
-          paddingRight: '16px',
-          background: 'transparent',
-          borderBottom: 'none'
-        }}>
-          {/* Left: Just "<" (no text) on inner pages */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {!isDashboard && (
+        {/* Inner Pages Topbar: Left "<", Right Bell + N (Not on Dashboard to avoid empty top-left space) */}
+        {!isDashboard && (
+          <header className="topbar" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 'calc(48px + env(safe-area-inset-top))',
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+            background: 'transparent',
+            borderBottom: 'none'
+          }}>
+            {/* Left: Just "<" (no text) on inner pages */}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
               <button 
                 onClick={() => navigate('/dashboard')}
                 aria-label="Back"
@@ -120,60 +120,60 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
               >
                 <ChevronLeft size={20} />
               </button>
-            )}
-          </div>
-
-          {/* Right: Notification Bell & Profile Avatar N on the EXACT same line */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                position: 'relative',
-                background: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '50%',
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--color-text-primary)'
-              }}
-              title="Notifications"
-            >
-              <Bell size={16} />
-              <span style={{
-                position: 'absolute',
-                top: '7px',
-                right: '8px',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: '#ef4444'
-              }} />
             </div>
 
-            <div
-              onClick={() => navigate('/settings')}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-primary)',
-                color: 'var(--color-bg-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '13.5px',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-sm)'
-              }}
-              title="Settings & Profile"
-            >
-              N
+            {/* Right: Notification Bell & Profile Avatar N on the EXACT same line */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  position: 'relative',
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--color-text-primary)'
+                }}
+                title="Notifications"
+              >
+                <Bell size={16} />
+                <span style={{
+                  position: 'absolute',
+                  top: '7px',
+                  right: '8px',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ef4444'
+                }} />
+              </div>
+
+              <div
+                onClick={() => navigate('/settings')}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'var(--color-bg-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: '13.5px',
+                  cursor: 'pointer',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+                title="Settings & Profile"
+              >
+                N
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         <div className="page-content" style={{ paddingBottom: 'calc(84px + env(safe-area-inset-bottom))' }}>
           {children}

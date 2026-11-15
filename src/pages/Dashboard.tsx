@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
+  Bell,
   Layers, 
   UserPlus, 
   Calendar, 
@@ -202,33 +203,92 @@ export default function Dashboard() {
   return (
     <div style={{ maxWidth: '820px', margin: '0 auto', padding: '0 4px' }}>
       
-      {/* 1. DYNAMIC DATE & GREETING */}
-      <div style={{ marginBottom: '20px', paddingTop: '4px' }}>
-        <div style={{ 
-          fontSize: '11px', 
-          fontWeight: 700, 
-          letterSpacing: '0.8px', 
-          color: 'var(--color-text-secondary)',
-          textTransform: 'uppercase'
-        }}>
-          {formattedToday}
+      {/* 1. TOP HEADER & GREETING: DATE & TITLE ON LEFT, NOTIFICATIONS + PROFILE ON RIGHT */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'flex-start', 
+        justifyContent: 'space-between', 
+        marginBottom: '16px',
+        paddingTop: '2px'
+      }}>
+        <div>
+          <div style={{ 
+            fontSize: '11px', 
+            fontWeight: 700, 
+            letterSpacing: '0.8px', 
+            color: 'var(--color-text-secondary)',
+            textTransform: 'uppercase'
+          }}>
+            {formattedToday}
+          </div>
+          <h1 style={{ 
+            fontSize: '28px', 
+            fontWeight: 800, 
+            letterSpacing: '-0.6px', 
+            margin: '2px 0 2px 0',
+            color: 'var(--color-text-primary)'
+          }}>
+            Overview
+          </h1>
+          <p style={{ 
+            fontSize: '13px', 
+            color: 'var(--color-text-secondary)', 
+            margin: 0 
+          }}>
+            Your event operations at a glance.
+          </p>
         </div>
-        <h1 style={{ 
-          fontSize: '28px', 
-          fontWeight: 800, 
-          letterSpacing: '-0.6px', 
-          margin: '2px 0 2px 0',
-          color: 'var(--color-text-primary)'
-        }}>
-          Overview
-        </h1>
-        <p style={{ 
-          fontSize: '13.5px', 
-          color: 'var(--color-text-secondary)', 
-          margin: 0 
-        }}>
-          Your event operations at a glance.
-        </p>
+
+        {/* Right Actions: Notifications & Profile N */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '4px' }}>
+          <div
+            style={{
+              position: 'relative',
+              background: 'var(--color-bg-secondary)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-text-primary)'
+            }}
+            title="Notifications"
+          >
+            <Bell size={16} />
+            <span style={{
+              position: 'absolute',
+              top: '7px',
+              right: '8px',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: '#ef4444'
+            }} />
+          </div>
+
+          <div
+            onClick={() => navigate('/settings')}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-primary)',
+              color: 'var(--color-bg-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '13.5px',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+            title="Settings & Profile"
+          >
+            N
+          </div>
+        </div>
       </div>
 
       {/* 3. METRICS STATS ROW (TOTAL LEADS & NEW LEADS) */}
