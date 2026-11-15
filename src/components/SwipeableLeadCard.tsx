@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, Edit3, MessageCircle } from 'lucide-react';
+import { Trash2, Edit3, MessageCircle, Phone } from 'lucide-react';
 
 export interface SwipeableLeadCardProps {
   id?: string;
@@ -337,41 +337,67 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
               <span style={{ fontWeight: 700, color: roleColors.color }}>{type}</span>
               <span>&bull;</span>
               <span>{location}</span>
-              {phone && (
-                <>
-                  <span>&bull;</span>
-                  <span style={{ opacity: 0.85 }}>{phone}</span>
-                </>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Quick WhatsApp Action (Direct 1-tap) */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onWhatsApp();
-          }}
-          aria-label={`WhatsApp ${name}`}
-          style={{
-            background: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-border)',
-            color: '#10b981',
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            flexShrink: 0
-          }}
-          title="Message on WhatsApp"
-        >
-          <MessageCircle size={18} />
-        </button>
+        {/* Quick Actions: Direct Call & WhatsApp */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {phone && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = `tel:${phone}`;
+              }}
+              aria-label={`Call ${name}`}
+              style={{
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'transform 0.1s ease, background-color 0.15s ease'
+              }}
+              title={`Call ${phone}`}
+            >
+              <Phone size={16} />
+            </button>
+          )}
+
+          {/* Quick WhatsApp Action (Direct 1-tap) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onWhatsApp();
+            }}
+            aria-label={`WhatsApp ${name}`}
+            style={{
+              background: 'var(--color-bg-secondary)',
+              border: '1px solid var(--color-border)',
+              color: '#10b981',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'transform 0.1s ease, background-color 0.15s ease'
+            }}
+            title="Message on WhatsApp"
+          >
+            <MessageCircle size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

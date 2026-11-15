@@ -943,17 +943,19 @@ export default function WhatsAppDrafts() {
                     </div>
                   )}
 
-                  {/* Bottom Action Bar: Edit · Duplicate · Copy | Send on WhatsApp (MATCHING REFERENCE) */}
+                  {/* Bottom Action Bar: Edit · Duplicate · Copy | WhatsApp (Clean Responsive Spacing) */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     borderTop: '1px solid var(--color-border)',
                     marginTop: '10px',
-                    paddingTop: '8px'
+                    paddingTop: '8px',
+                    minWidth: 0,
+                    gap: '6px'
                   }}>
                     {/* Left Actions */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                       <button
                         type="button"
                         onClick={() => handleOpenEditor(draft)}
@@ -961,13 +963,14 @@ export default function WhatsAppDrafts() {
                           background: 'none',
                           border: 'none',
                           color: 'var(--color-text-primary)',
-                          fontSize: '12px',
+                          fontSize: '11.5px',
                           fontWeight: 600,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
+                          gap: '4px',
                           cursor: 'pointer',
-                          padding: 0
+                          padding: 0,
+                          flexShrink: 0
                         }}
                       >
                         <Edit3 size={13} />
@@ -981,13 +984,14 @@ export default function WhatsAppDrafts() {
                           background: 'none',
                           border: 'none',
                           color: 'var(--color-text-primary)',
-                          fontSize: '12px',
+                          fontSize: '11.5px',
                           fontWeight: 600,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
+                          gap: '4px',
                           cursor: 'pointer',
-                          padding: 0
+                          padding: 0,
+                          flexShrink: 0
                         }}
                       >
                         <Copy size={13} />
@@ -1001,13 +1005,14 @@ export default function WhatsAppDrafts() {
                           background: 'none',
                           border: 'none',
                           color: 'var(--color-text-primary)',
-                          fontSize: '12px',
+                          fontSize: '11.5px',
                           fontWeight: 600,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '5px',
+                          gap: '4px',
                           cursor: 'pointer',
-                          padding: 0
+                          padding: 0,
+                          flexShrink: 0
                         }}
                       >
                         <Share2 size={13} />
@@ -1016,8 +1021,8 @@ export default function WhatsAppDrafts() {
                     </div>
 
                     {/* Divider & Send on WhatsApp */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--color-border)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                      <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--color-border)', flexShrink: 0 }} />
                       
                       <button
                         type="button"
@@ -1026,17 +1031,19 @@ export default function WhatsAppDrafts() {
                           background: 'none',
                           border: 'none',
                           color: 'var(--color-text-primary)',
-                          fontSize: '12.5px',
+                          fontSize: '12px',
                           fontWeight: 700,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '5px',
                           cursor: 'pointer',
-                          padding: 0
+                          padding: 0,
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        <MessageCircle size={15} style={{ color: '#10b981' }} />
-                        <span>Send on WhatsApp</span>
+                        <MessageCircle size={15} style={{ color: '#10b981', flexShrink: 0 }} />
+                        <span>WhatsApp</span>
                       </button>
                     </div>
                   </div>
