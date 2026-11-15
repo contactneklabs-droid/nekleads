@@ -69,8 +69,17 @@ const pushToQueue = (operation: any) => {
 };
 
 export const saveCandidate = (candidate: Omit<Candidate, 'id' | 'createdAt' | 'syncStatus'>): Candidate => {
+  let cleanPhone = (candidate.phone || '').replace(/\D/g, '');
+  if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+    cleanPhone = cleanPhone.slice(2);
+  } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+    cleanPhone = cleanPhone.slice(1);
+  }
+  cleanPhone = cleanPhone.slice(0, 10);
+
   const newCandidate: Candidate = {
     ...candidate,
+    phone: cleanPhone,
     id: uuidv4(),
     createdAt: new Date().toISOString(),
     syncStatus: navigator.onLine ? 'synced' : 'pending' // Simplified for prototype
@@ -91,15 +100,26 @@ export const updateCandidate = (id: string, updates: Partial<Candidate>): Candid
   const index = current.findIndex(c => c.id === id);
   if (index === -1) throw new Error('Not found');
   
+  let sanitizedUpdates = { ...updates };
+  if (updates.phone !== undefined) {
+    let cleanPhone = updates.phone.replace(/\D/g, '');
+    if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+      cleanPhone = cleanPhone.slice(2);
+    } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.slice(1);
+    }
+    sanitizedUpdates.phone = cleanPhone.slice(0, 10);
+  }
+
   const updated: Candidate = { 
     ...current[index], 
-    ...updates, 
+    ...sanitizedUpdates, 
     syncStatus: navigator.onLine ? 'synced' : 'pending' 
   };
   current[index] = updated;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
   
-  pushToQueue({ type: 'UPDATE', payload: { id, updates } });
+  pushToQueue({ type: 'UPDATE', payload: { id, updates: sanitizedUpdates } });
   
   return updated;
 };

@@ -393,19 +393,25 @@ export default function WhatsAppDrafts() {
   // Execute Direct Phone Send
   const handleSendToManualPhone = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualPhoneInput.trim() || !targetDraftForSend) return;
+    if (!targetDraftForSend) return;
+
+    const cleanPhone = manualPhoneInput.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      addToast('error', 'Please enter a valid 10-digit phone number');
+      return;
+    }
 
     const message = targetDraftForSend.message
       .replace(/{Name}/g, 'Team')
       .replace(/{Location}/g, 'Bangalore');
 
-    openWhatsAppDirect(manualPhoneInput.trim(), message);
+    openWhatsAppDirect(cleanPhone, message);
 
     const sentRecord: SentHistoryRecord = {
       id: `sent-${Date.now()}`,
       draftTitle: targetDraftForSend.title,
       recipientName: 'Direct Contact',
-      recipientPhone: manualPhoneInput.trim(),
+      recipientPhone: cleanPhone,
       message,
       sentAt: new Date().toISOString()
     };
@@ -1396,12 +1402,24 @@ export default function WhatsAppDrafts() {
 
             <form onSubmit={handleSendToManualPhone} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label className="form-label">Phone Number</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>Phone Number *</label>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 700,
+                    color: manualPhoneInput.length === 10 ? '#10b981' : manualPhoneInput.length > 0 ? 'var(--color-primary)' : 'var(--color-text-secondary)' 
+                  }}>
+                    {manualPhoneInput.length}/10 digits
+                  </span>
+                </div>
                 <input
                   type="tel"
-                  placeholder="e.g. 9876543210"
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
+                  maxLength={10}
+                  placeholder="10-digit mobile number"
                   value={manualPhoneInput}
-                  onChange={(e) => setManualPhoneInput(e.target.value)}
+                  onChange={(e) => setManualPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className="input-field"
                   autoFocus
                   required

@@ -66,11 +66,18 @@ export default function Dashboard() {
 
   // Quick Add submit
   const handleQuickAddSubmit = () => {
-    if (!quickAddForm.name || !quickAddForm.phone || !quickAddForm.location) {
-      addToast('error', 'Please fill all required fields');
+    const cleanPhone = quickAddForm.phone.replace(/\D/g, '');
+    if (!quickAddForm.name || !quickAddForm.location) {
+      addToast('error', 'Please fill name and location');
       return;
     }
-    const isDuplicate = candidates.some(c => c.phone === quickAddForm.phone);
+
+    if (cleanPhone.length !== 10) {
+      addToast('error', 'Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    const isDuplicate = candidates.some(c => c.phone === cleanPhone);
     if (isDuplicate) {
       addToast('error', 'Phone number already registered');
       return;
@@ -78,7 +85,7 @@ export default function Dashboard() {
 
     saveCandidate({
       name: quickAddForm.name,
-      phone: quickAddForm.phone,
+      phone: cleanPhone,
       type: quickAddForm.type,
       location: quickAddForm.location,
       gender: quickAddForm.gender
@@ -91,11 +98,18 @@ export default function Dashboard() {
   };
 
   const handleQuickAddAndAnother = () => {
-    if (!quickAddForm.name || !quickAddForm.phone || !quickAddForm.location) {
-      addToast('error', 'Please fill all required fields');
+    const cleanPhone = quickAddForm.phone.replace(/\D/g, '');
+    if (!quickAddForm.name || !quickAddForm.location) {
+      addToast('error', 'Please fill name and location');
       return;
     }
-    const isDuplicate = candidates.some(c => c.phone === quickAddForm.phone);
+
+    if (cleanPhone.length !== 10) {
+      addToast('error', 'Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    const isDuplicate = candidates.some(c => c.phone === cleanPhone);
     if (isDuplicate) {
       addToast('error', 'Phone number already registered');
       return;
@@ -103,7 +117,7 @@ export default function Dashboard() {
 
     saveCandidate({
       name: quickAddForm.name,
-      phone: quickAddForm.phone,
+      phone: cleanPhone,
       type: quickAddForm.type,
       location: quickAddForm.location,
       gender: quickAddForm.gender
@@ -524,13 +538,26 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <label className="form-label">Phone Number</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>Phone Number *</label>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 700,
+                    color: quickAddForm.phone.length === 10 ? '#10b981' : quickAddForm.phone.length > 0 ? 'var(--color-primary)' : 'var(--color-text-secondary)' 
+                  }}>
+                    {quickAddForm.phone.length}/10 digits
+                  </span>
+                </div>
                 <input 
                   type="tel" 
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
+                  maxLength={10}
                   className="input-field" 
-                  placeholder="e.g. 9876543210"
+                  placeholder="10-digit mobile number"
                   value={quickAddForm.phone}
-                  onChange={(e) => setQuickAddForm({ ...quickAddForm, phone: e.target.value })}
+                  onChange={(e) => setQuickAddForm({ ...quickAddForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                  required
                 />
               </div>
 

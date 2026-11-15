@@ -200,15 +200,25 @@ export default function Settings() {
       const current = getCandidates();
       
       for (const row of importStatus.data) {
-        const phone = row.Phone || row.phone || row['Phone Number'];
+        const rawPhone = row.Phone || row.phone || row['Phone Number'] || row['Mobile'] || row['Contact'];
         const name = row.Name || row.name;
         const type = row.Type || row.type || row.Category || 'Volunteer';
         const location = row.Location || row.location || row.Landmark || 'Unknown';
         
-        if (!name || !phone) continue;
+        if (!name || !rawPhone) continue;
 
-        const isDuplicate = current.some(c => c.phone === String(phone)) || 
-                            importStatus.data.some((d: any) => d !== row && String(d.Phone) === String(phone));
+        let cleanPhone = String(rawPhone).replace(/\D/g, '');
+        if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+          cleanPhone = cleanPhone.slice(2);
+        } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+          cleanPhone = cleanPhone.slice(1);
+        }
+
+        // Restrict strictly to 10-digit phone numbers
+        if (cleanPhone.length !== 10) continue;
+
+        const isDuplicate = current.some(c => c.phone === cleanPhone) || 
+                            importStatus.data.some((d: any) => d !== row && String(d.Phone || d.phone || d['Phone Number'] || '').replace(/\D/g, '').endsWith(cleanPhone));
         
         if (isDuplicate) {
           duplicates++;
@@ -217,7 +227,7 @@ export default function Settings() {
 
         saveCandidate({
           name: String(name),
-          phone: String(phone),
+          phone: cleanPhone,
           type: String(type),
           location: String(location)
         });

@@ -37,14 +37,20 @@ export function QuickAddLeadModal({ isOpen, onClose, defaultType = 'Volunteer' }
   if (!isOpen) return null;
 
   const handleSubmit = (addAnother = false) => {
-    if (!form.name.trim() || !form.phone.trim()) {
-      addToast('error', 'Please enter Name and Phone number');
+    const cleanPhone = form.phone.replace(/\D/g, '');
+    if (!form.name.trim()) {
+      addToast('error', 'Please enter a name');
+      return;
+    }
+
+    if (cleanPhone.length !== 10) {
+      addToast('error', 'Please enter a valid 10-digit phone number');
       return;
     }
 
     saveCandidate({
       name: form.name.trim(),
-      phone: form.phone.trim(),
+      phone: cleanPhone,
       type: form.type,
       location: form.location.trim() || 'Bangalore',
       gender: form.gender
@@ -125,13 +131,25 @@ export function QuickAddLeadModal({ isOpen, onClose, defaultType = 'Volunteer' }
           </div>
 
           <div>
-            <label className="form-label">Phone Number *</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label className="form-label" style={{ margin: 0 }}>Phone Number *</label>
+              <span style={{ 
+                fontSize: '11px', 
+                fontWeight: 700,
+                color: form.phone.length === 10 ? '#10b981' : form.phone.length > 0 ? 'var(--color-primary)' : 'var(--color-text-secondary)' 
+              }}>
+                {form.phone.length}/10 digits
+              </span>
+            </div>
             <input 
               type="tel" 
+              inputMode="numeric"
+              pattern="[0-9]{10}"
+              maxLength={10}
               className="input-field" 
-              placeholder="e.g. 9876543210"
+              placeholder="10-digit mobile number"
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
               required
             />
           </div>
