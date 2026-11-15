@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Bell, 
   Layers, 
   UserPlus, 
   Briefcase, 
@@ -204,74 +203,8 @@ export default function Dashboard() {
   return (
     <div style={{ maxWidth: '820px', margin: '0 auto', padding: '0 4px' }}>
       
-      {/* 1. TOP HEADER: NOTIFICATIONS + PROFILE (NO 'NEK LEADS' TO SAVE SPACE) */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'flex-end', 
-        gap: '10px',
-        marginBottom: '14px',
-        paddingTop: '2px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Notification Bell */}
-          <button
-            onClick={() => {
-              addToast('info', 'All event operations are synced and healthy.');
-            }}
-            style={{
-              position: 'relative',
-              background: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '50%',
-              width: '36px',
-              height: '36px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--color-text-primary)',
-              cursor: 'pointer'
-            }}
-            title="Notifications"
-          >
-            <Bell size={16} />
-            <span style={{
-              position: 'absolute',
-              top: '7px',
-              right: '8px',
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              backgroundColor: '#ef4444'
-            }} />
-          </button>
-
-          {/* User Profile Avatar - Navigates to Settings when tapped */}
-          <div
-            onClick={() => navigate('/settings')}
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--color-primary)',
-              color: 'var(--color-bg-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '13.5px',
-              cursor: 'pointer',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-            title="Settings & Profile"
-          >
-            N
-          </div>
-        </div>
-      </div>
-
-      {/* 2. DYNAMIC DATE & GREETING */}
-      <div style={{ marginBottom: '20px' }}>
+      {/* 1. DYNAMIC DATE & GREETING */}
+      <div style={{ marginBottom: '20px', paddingTop: '4px' }}>
         <div style={{ 
           fontSize: '11px', 
           fontWeight: 700, 

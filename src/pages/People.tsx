@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
-  Bell, 
   Search, 
   Plus, 
   Users, 
@@ -25,7 +23,6 @@ import { WhatsAppDirectModal } from '../components/WhatsAppDirectModal';
 import { LeadCardSkeleton } from '../components/LeadCardSkeleton';
 
 export default function People() {
-  const navigate = useNavigate();
   const { addToast } = useToast();
   const { confirm } = useDialog();
 
@@ -190,70 +187,8 @@ export default function People() {
   return (
     <div style={{ maxWidth: '820px', margin: '0 auto', padding: '0 4px', position: 'relative', minHeight: '85vh' }}>
       
-      {/* 1. TOP BAR: PROFILE & NOTIFICATIONS (NO 'NEK LEADS' TO SAVE SPACE) */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'flex-end', 
-        gap: '10px',
-        marginBottom: '12px',
-        paddingTop: '2px'
-      }}>
-        {/* Notification Bell */}
-        <button
-          onClick={() => addToast('info', `${candidates.length} active people in directory.`)}
-          style={{
-            position: 'relative',
-            background: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: '50%',
-            width: '36px',
-            height: '36px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-text-primary)',
-            cursor: 'pointer'
-          }}
-          title="Notifications"
-        >
-          <Bell size={16} />
-          <span style={{
-            position: 'absolute',
-            top: '7px',
-            right: '8px',
-            width: '6px',
-            height: '6px',
-            borderRadius: '50%',
-            backgroundColor: '#ef4444'
-          }} />
-        </button>
-
-        {/* User Profile Avatar - Navigates to Settings when tapped */}
-        <div
-          onClick={() => navigate('/settings')}
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--color-primary)',
-            color: 'var(--color-bg-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: '13.5px',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-          title="Settings & Profile"
-        >
-          N
-        </div>
-      </div>
-
-      {/* 2. CATEGORY / TITLE HEADER */}
-      <div style={{ marginBottom: '16px' }}>
+      {/* CATEGORY / TITLE HEADER */}
+      <div style={{ marginBottom: '16px', paddingTop: '4px' }}>
         <div style={{ 
           fontSize: '11px', 
           fontWeight: 700, 

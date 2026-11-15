@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, MoreHorizontal, MessageSquare, Settings, ChevronLeft } from 'lucide-react';
-import { ToastProvider } from './contexts/ToastContext';
+import { LayoutDashboard, Users, Calendar, MoreHorizontal, MessageSquare, Settings, ChevronLeft, Bell } from 'lucide-react';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { AppLockProvider } from './contexts/AppLockContext';
 import { MoreActionSheet } from './components/MoreActionSheet';
@@ -18,6 +18,7 @@ const SettingsPage = React.lazy(() => import('./pages/Settings'));
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isCalcOpen, setIsCalcOpen] = useState(false);
@@ -46,19 +47,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       navigate('/dashboard');
     }
     touchStartRef.current = null;
-  };
-
-  // Format title for inner pages
-  const getPageTitle = () => {
-    switch (location.pathname) {
-      case '/people':
-      case '/volunteers': return 'People Hub';
-      case '/events': return 'Events & Schedule';
-      case '/manpower': return 'Manpower Directory';
-      case '/whatsapp-drafts': return 'WhatsApp Drafts';
-      case '/settings': return 'System Settings';
-      default: return 'Overview';
-    }
   };
 
   return (
@@ -100,35 +88,95 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main Content Area */}
       <main className="main-content">
-        {!isDashboard && (
-          <header className="topbar">
-            {/* If on inner page, show sleek back button */}
-            <button 
-              onClick={() => navigate('/dashboard')}
-              style={{ 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                gap: '6px', 
-                background: 'none', 
-                border: 'none', 
-                color: 'var(--color-text-primary)', 
-                fontSize: '14px', 
-                fontWeight: 600, 
-                padding: '6px 10px', 
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'background-color 0.15s ease'
+        {/* Unified 1-Line Compact Topbar */}
+        <header className="topbar" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: 'calc(48px + env(safe-area-inset-top))',
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          background: 'transparent',
+          borderBottom: 'none'
+        }}>
+          {/* Left: Just "<" (no text) on inner pages */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            {!isDashboard && (
+              <button 
+                onClick={() => navigate('/dashboard')}
+                aria-label="Back"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  width: '36px',
+                  height: '36px',
+                  background: 'var(--color-bg-secondary)', 
+                  border: '1px solid var(--color-border)', 
+                  color: 'var(--color-text-primary)', 
+                  borderRadius: '50%',
+                  cursor: 'pointer'
+                }}
+              >
+                <ChevronLeft size={20} />
+              </button>
+            )}
+          </div>
+
+          {/* Right: Notification Bell & Profile Avatar N on the EXACT same line */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => addToast('info', 'All operational services synced and healthy.')}
+              style={{
+                position: 'relative',
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--color-text-primary)',
+                cursor: 'pointer'
               }}
+              title="Notifications"
             >
-              <ChevronLeft size={20} />
-              <span>Back</span>
+              <Bell size={16} />
+              <span style={{
+                position: 'absolute',
+                top: '7px',
+                right: '8px',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: '#ef4444'
+              }} />
             </button>
 
-            <div className="desktop-only" style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-              {getPageTitle()}
+            <div
+              onClick={() => navigate('/settings')}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-primary)',
+                color: 'var(--color-bg-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: '13.5px',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+              title="Settings & Profile"
+            >
+              N
             </div>
-          </header>
-        )}
+          </div>
+        </header>
 
         <div className="page-content" style={{ paddingBottom: 'calc(84px + env(safe-area-inset-bottom))' }}>
           {children}
