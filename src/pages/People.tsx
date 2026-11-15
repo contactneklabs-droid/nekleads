@@ -189,32 +189,57 @@ export default function People() {
     <div style={{ maxWidth: '820px', margin: '0 auto', padding: '0 4px', position: 'relative', minHeight: '85vh' }}>
       
       {/* CATEGORY / TITLE HEADER */}
-      <div style={{ marginBottom: '16px', paddingTop: '4px' }}>
-        <div style={{ 
-          fontSize: '11px', 
-          fontWeight: 700, 
-          letterSpacing: '0.8px', 
-          color: 'var(--color-text-secondary)',
-          textTransform: 'uppercase'
-        }}>
-          OPERATIONS / PEOPLE
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', paddingTop: '4px' }}>
+        <div>
+          <div style={{ 
+            fontSize: '11px', 
+            fontWeight: 700, 
+            letterSpacing: '0.8px', 
+            color: 'var(--color-text-secondary)',
+            textTransform: 'uppercase'
+          }}>
+            OPERATIONS / PEOPLE
+          </div>
+          <h1 style={{ 
+            fontSize: '28px', 
+            fontWeight: 800, 
+            letterSpacing: '-0.6px', 
+            margin: '2px 0 2px 0',
+            color: 'var(--color-text-primary)'
+          }}>
+            People
+          </h1>
+          <p style={{ 
+            fontSize: '13px', 
+            color: 'var(--color-text-secondary)', 
+            margin: 0 
+          }}>
+            Manage Volunteers, Hostess and Manpower.
+          </p>
         </div>
-        <h1 style={{ 
-          fontSize: '28px', 
-          fontWeight: 800, 
-          letterSpacing: '-0.6px', 
-          margin: '2px 0 2px 0',
-          color: 'var(--color-text-primary)'
-        }}>
-          People
-        </h1>
-        <p style={{ 
-          fontSize: '13px', 
-          color: 'var(--color-text-secondary)', 
-          margin: 0 
-        }}>
-          Manage Volunteers, Hostess and Manpower.
-        </p>
+
+        <button
+          type="button"
+          onClick={handleOpenAdd}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '9px 15px',
+            borderRadius: '20px',
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-bg-primary)',
+            border: 'none',
+            fontSize: '13px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-sm)',
+            flexShrink: 0
+          }}
+        >
+          <Plus size={15} strokeWidth={2.5} />
+          <span>Add Person</span>
+        </button>
       </div>
 
       {/* 3. CATEGORY PILLS (ALL PEOPLE, VOLUNTEERS, HOSTESS, MANPOWER) */}
@@ -496,33 +521,6 @@ export default function People() {
           )}
         </div>
       )}
-
-      {/* 6. FLOATING ACTION BUTTON (FAB) (+) */}
-      <button
-        onClick={handleOpenAdd}
-        style={{
-          position: 'fixed',
-          bottom: 'calc(76px + env(safe-area-inset-bottom))',
-          right: '20px',
-          width: '54px',
-          height: '54px',
-          borderRadius: '50%',
-          backgroundColor: 'var(--color-primary)',
-          color: 'var(--color-bg-primary)',
-          border: 'none',
-          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          zIndex: 1500
-        }}
-        title="Add Person"
-      >
-        <Plus size={24} />
-      </button>
-
-
 
       {/* ADD / EDIT PERSON MODAL */}
       {isAddModalOpen && (

@@ -4,15 +4,11 @@ import { LayoutDashboard, Users, MessageSquare, Settings, ChevronLeft, Bell } fr
 import { ToastProvider } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { AppLockProvider } from './contexts/AppLockContext';
-import { MoreActionSheet } from './components/MoreActionSheet';
-import { PayoutCalculatorModal } from './components/PayoutCalculatorModal';
 import { FloatingMonochromeNav } from './components/FloatingMonochromeNav';
 import { QuickAddLeadModal } from './components/QuickAddLeadModal';
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const People = React.lazy(() => import('./pages/People'));
-const Volunteers = React.lazy(() => import('./pages/Volunteers'));
-const Manpower = React.lazy(() => import('./pages/Manpower'));
 const WhatsAppDrafts = React.lazy(() => import('./pages/WhatsAppDrafts'));
 const SettingsPage = React.lazy(() => import('./pages/Settings'));
 
@@ -21,8 +17,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
   const isSettings = location.pathname === '/settings';
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
   // iOS Native Edge-Swipe Back Gesture
@@ -189,27 +183,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}
       />
-
-      {/* Slide-Up More Actions Hub */}
-      <MoreActionSheet
-        isOpen={isMoreOpen}
-        onClose={() => setIsMoreOpen(false)}
-        onOpenCalculator={() => setIsCalcOpen(true)}
-      />
-
-      {/* Payout Calculator Modal */}
-      <PayoutCalculatorModal
-        isOpen={isCalcOpen}
-        onClose={() => setIsCalcOpen(false)}
-        onApplyToClientDraft={() => {
-          setIsCalcOpen(false);
-          navigate('/whatsapp-drafts');
-        }}
-        onApplyToTeamDraft={() => {
-          setIsCalcOpen(false);
-          navigate('/whatsapp-drafts');
-        }}
-      />
     </div>
   );
 };
@@ -276,8 +249,8 @@ const App = () => {
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/people" element={<People />} />
-                  <Route path="/volunteers" element={<Volunteers />} />
-                  <Route path="/manpower" element={<Manpower />} />
+                  <Route path="/volunteers" element={<Navigate to="/people" replace />} />
+                  <Route path="/manpower" element={<Navigate to="/people" replace />} />
                   <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Routes>

@@ -11,7 +11,7 @@ export default defineConfig({
             manifest: {
                 name: 'NEK LEADS',
                 short_name: 'NEK LEADS',
-                description: 'Volunteer & Manpower Management for NEK',
+                description: 'Event Staffing & Lead Operations',
                 theme_color: '#000000',
                 background_color: '#000000',
                 display: 'standalone',
@@ -38,22 +38,22 @@ export default defineConfig({
                     {
                         name: 'WhatsApp Drafts',
                         short_name: 'Drafts',
-                        description: 'Event and payment notice generator',
+                        description: 'Instant crew & client messaging drafts',
                         url: '/whatsapp-drafts',
                         icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
                     },
                     {
-                        name: 'Talent Directory',
-                        short_name: 'Talent',
-                        description: 'View hostesses & volunteer leads',
-                        url: '/volunteers',
+                        name: 'People Directory',
+                        short_name: 'People',
+                        description: 'Manage Volunteers, Hostess & Manpower',
+                        url: '/people',
                         icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
                     },
                     {
-                        name: 'Manpowers',
-                        short_name: 'Manpowers',
-                        description: 'View crew & manpower leads',
-                        url: '/manpower',
+                        name: 'Operations Overview',
+                        short_name: 'Overview',
+                        description: 'Live staffing metrics & summary',
+                        url: '/dashboard',
                         icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
                     }
                 ]

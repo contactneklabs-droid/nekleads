@@ -438,32 +438,57 @@ export default function WhatsAppDrafts() {
     <div style={{ maxWidth: '820px', margin: '0 auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
       
       {/* 1. SECTION TITLE & KICKER (MATCHING REFERENCE) */}
-      <div style={{ marginBottom: '16px', marginTop: '6px' }}>
-        <span style={{ 
-          fontSize: '11px', 
-          fontWeight: 800, 
-          letterSpacing: '0.8px', 
-          color: 'var(--color-text-secondary)',
-          textTransform: 'uppercase'
-        }}>
-          OPERATIONS / COMMUNICATION
-        </span>
-        <h1 style={{ 
-          fontSize: '26px', 
-          fontWeight: 800, 
-          margin: '2px 0 2px 0', 
-          letterSpacing: '-0.5px',
-          color: 'var(--color-text-primary)'
-        }}>
-          WhatsApp Drafts
-        </h1>
-        <p style={{ 
-          fontSize: '13px', 
-          color: 'var(--color-text-secondary)', 
-          margin: 0 
-        }}>
-          Create, manage and send team messages.
-        </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', marginTop: '6px' }}>
+        <div>
+          <span style={{ 
+            fontSize: '11px', 
+            fontWeight: 800, 
+            letterSpacing: '0.8px', 
+            color: 'var(--color-text-secondary)',
+            textTransform: 'uppercase'
+          }}>
+            OPERATIONS / COMMUNICATION
+          </span>
+          <h1 style={{ 
+            fontSize: '26px', 
+            fontWeight: 800, 
+            margin: '2px 0 2px 0', 
+            letterSpacing: '-0.5px',
+            color: 'var(--color-text-primary)'
+          }}>
+            WhatsApp Drafts
+          </h1>
+          <p style={{ 
+            fontSize: '13px', 
+            color: 'var(--color-text-secondary)', 
+            margin: 0 
+          }}>
+            Create, manage and send team messages.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => handleOpenEditor()}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '9px 15px',
+            borderRadius: '20px',
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-bg-primary)',
+            border: 'none',
+            fontSize: '13px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-sm)',
+            flexShrink: 0
+          }}
+        >
+          <Plus size={15} strokeWidth={2.5} />
+          <span>New Draft</span>
+        </button>
       </div>
 
       {/* 2. TOP VIEW SWITCHER: DRAFTS | TEMPLATES | SENT (MATCHING REFERENCE) */}
@@ -1207,35 +1232,7 @@ export default function WhatsAppDrafts() {
         </div>
       )}
 
-      {/* 8. FLOATING ACTION BUTTON (+) TO CREATE DRAFT (MATCHING REFERENCE) */}
-      <button
-        type="button"
-        onClick={() => handleOpenEditor()}
-        style={{
-          position: 'fixed',
-          bottom: 'calc(80px + env(safe-area-inset-bottom))',
-          right: '20px',
-          width: '54px',
-          height: '54px',
-          borderRadius: '50%',
-          backgroundColor: 'var(--color-primary)',
-          color: 'var(--color-bg-primary)',
-          border: 'none',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          zIndex: 1800,
-          transition: 'transform 0.15s ease'
-        }}
-        title="Create New Draft"
-        aria-label="Create New Draft"
-      >
-        <Plus size={26} strokeWidth={2.4} />
-      </button>
-
-      {/* 9. CREATE / EDIT DRAFT MODAL */}
+      {/* 8. CREATE / EDIT DRAFT MODAL */}
       {isEditorOpen && (
         <div 
           className="modal-overlay" 
