@@ -18,6 +18,11 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
   const isDashboardActive = location.pathname === '/' || location.pathname === '/dashboard';
   const isPeopleActive = location.pathname.startsWith('/people') || location.pathname === '/volunteers' || location.pathname === '/manpower';
 
+  // Completely hide the floating navigation bar on Settings
+  if (location.pathname === '/settings') {
+    return null;
+  }
+
   // Notch & Circle Horizontal Coordinates:
   // Left Slot (Home): center = 44px, circle left = 19px (44 - 25)
   // Right Slot (People): center = 216px, circle left = 191px (216 - 25)

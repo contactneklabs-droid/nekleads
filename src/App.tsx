@@ -20,6 +20,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
+  const isSettings = location.pathname === '/settings';
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -173,13 +174,15 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           </header>
         )}
 
-        <div className="page-content" style={{ paddingBottom: 'calc(84px + env(safe-area-inset-bottom))' }}>
+        <div className="page-content" style={{ paddingBottom: isSettings ? 'calc(24px + env(safe-area-inset-bottom))' : 'calc(84px + env(safe-area-inset-bottom))' }}>
           {children}
         </div>
       </main>
 
-      {/* Mobile Floating Monochrome Navigation Dock (Matching Reference Image) */}
-      <FloatingMonochromeNav onOpenQuickAdd={() => setIsQuickAddOpen(true)} />
+      {/* Mobile Floating Monochrome Navigation Dock (Hidden on Settings) */}
+      {!isSettings && (
+        <FloatingMonochromeNav onOpenQuickAdd={() => setIsQuickAddOpen(true)} />
+      )}
 
       {/* Quick Add Lead Modal (Global access from center + button) */}
       <QuickAddLeadModal
