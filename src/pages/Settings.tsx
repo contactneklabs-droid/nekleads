@@ -1,18 +1,59 @@
-import React, { useRef, useState } from 'react';
-import { Upload, FileJson, Lock, KeyRound, ShieldCheck, ShieldAlert, X } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { 
+  Bell, 
+  Moon, 
+  Sun, 
+  Globe, 
+  Upload, 
+  RefreshCw, 
+  Trash2, 
+  Info, 
+  ChevronRight, 
+  ShieldCheck, 
+  ShieldAlert, 
+  X,
+  Lock
+} from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { useAppLock } from '../contexts/AppLockContext';
-import { getCandidates, saveCandidate } from '../lib/db';
+import { getCandidates, saveCandidate, syncQueue } from '../lib/db';
 import { downloadInstantBackup } from '../lib/backup';
 
 export default function Settings() {
   const { addToast } = useToast();
   const { confirm } = useDialog();
-  const { isEnabled, enableLock, disableLock, changePin, lockNow } = useAppLock();
+  const { isEnabled, enableLock, disableLock, changePin } = useAppLock();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<any>(null);
+
+  // Profile info
+  const [profile, setProfile] = useState({
+    name: localStorage.getItem('nek_profile_name') || 'NEK Operations',
+    email: localStorage.getItem('nek_profile_email') || 'operations@nekleads.com'
+  });
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  // Appearance state
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('nek_theme') as 'light' | 'dark') || 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+    localStorage.setItem('nek_theme', theme);
+  }, [theme]);
+
+  const toggleAppearance = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    addToast('info', `Appearance set to ${next.toUpperCase()}`);
+  };
 
   // App Lock Modal States
   const [activeModal, setActiveModal] = useState<'setup' | 'change' | 'disable' | null>(null);
@@ -83,9 +124,20 @@ export default function Settings() {
     }
   };
 
-  const handleExportJSON = () => {
+  // Backup & Sync
+  const handleBackupAndSync = async () => {
     const count = downloadInstantBackup();
-    addToast('success', `Backed up ${count} leads to device!`);
+    const syncRes = await syncQueue();
+    if (syncRes.success) {
+      addToast('success', `Backed up ${count} records & synced ${syncRes.syncedCount} changes.`);
+    } else {
+      addToast('success', `Backed up ${count} records to device!`);
+    }
+  };
+
+  // Import / Export
+  const handleImportExport = () => {
+    fileInputRef.current?.click();
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,7 +155,7 @@ export default function Settings() {
             duplicates: 0,
             data: Array.isArray(json) ? json : []
           });
-        } catch (err) {
+        } catch {
           addToast('error', 'Failed to parse JSON file');
         }
       };
@@ -127,8 +179,7 @@ export default function Settings() {
           duplicates: 0,
           data
         });
-
-      } catch (err) {
+      } catch {
         addToast('error', 'Failed to parse file');
       }
     };
@@ -180,447 +231,509 @@ export default function Settings() {
     }
   };
 
+  // Delete / Reset All Data
+  const handleDeleteAllData = async () => {
+    const ok = await confirm({
+      title: 'Delete All Data?',
+      description: 'This will permanently erase all locally stored candidates, events, and drafts from this device. Download a backup first!',
+      confirmLabel: 'Erase Everything',
+      destructive: true
+    });
+    if (!ok) return;
+
+    localStorage.removeItem('nek_leads_candidates');
+    localStorage.removeItem('nek_leads_events');
+    localStorage.removeItem('nek_leads_activities');
+    localStorage.removeItem('nek_leads_offline_queue');
+    addToast('info', 'All data has been cleared from local storage.');
+    setTimeout(() => window.location.reload(), 400);
+  };
+
   return (
-    <div style={{ maxWidth: '920px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 className="page-title" style={{ marginBottom: 4 }}>System Settings</h1>
-        <div style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-          Security passcode, data backups, and team imports
+    <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 4px 60px 4px' }}>
+      
+      {/* Hidden file input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileUpload} 
+        accept=".json,.xlsx,.csv" 
+        style={{ display: 'none' }} 
+      />
+
+      {/* 1. HEADER */}
+      <div style={{ marginBottom: '18px', paddingTop: '4px' }}>
+        <div style={{ 
+          fontSize: '11px', 
+          fontWeight: 700, 
+          letterSpacing: '0.8px', 
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase'
+        }}>
+          ACCOUNT
+        </div>
+        <h1 style={{ 
+          fontSize: '28px', 
+          fontWeight: 800, 
+          letterSpacing: '-0.6px', 
+          margin: '2px 0 2px 0',
+          color: 'var(--color-text-primary)'
+        }}>
+          Settings
+        </h1>
+        <p style={{ 
+          fontSize: '13px', 
+          color: 'var(--color-text-secondary)', 
+          margin: 0 
+        }}>
+          Manage your account, app preferences and data.
+        </p>
+      </div>
+
+      {/* 2. USER PROFILE CARD */}
+      <div 
+        onClick={() => setIsProfileModalOpen(true)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '14px 16px',
+          backgroundColor: 'var(--color-bg-primary)',
+          borderRadius: '18px',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-sm)',
+          cursor: 'pointer',
+          marginBottom: '22px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            width: '46px',
+            height: '46px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-bg-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 800,
+            fontSize: '17px',
+            flexShrink: 0
+          }}>
+            N
+          </div>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+              {profile.name}
+            </div>
+            <div style={{ fontSize: '12.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+              {profile.email}
+            </div>
+          </div>
+        </div>
+        <ChevronRight size={18} color="var(--color-text-secondary)" />
+      </div>
+
+      {/* 3. PREFERENCES SECTION (INSET GROUPED CARD) */}
+      <div style={{ marginBottom: '22px' }}>
+        <div style={{ 
+          fontSize: '11px', 
+          fontWeight: 700, 
+          letterSpacing: '0.8px', 
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase',
+          marginBottom: '8px',
+          marginLeft: '4px'
+        }}>
+          PREFERENCES
+        </div>
+
+        <div style={{
+          backgroundColor: 'var(--color-bg-primary)',
+          borderRadius: '16px',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-sm)',
+          overflow: 'hidden'
+        }}>
+          {/* Notifications */}
+          <div 
+            onClick={() => addToast('info', 'System notifications are active.')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--color-border)',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Bell size={18} color="var(--color-text-primary)" />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Notifications</span>
+            </div>
+            <ChevronRight size={18} color="var(--color-text-secondary)" />
+          </div>
+
+          {/* Appearance */}
+          <div 
+            onClick={toggleAppearance}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--color-border)',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Appearance</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', textTransform: 'capitalize' }}>
+                {theme}
+              </span>
+              <ChevronRight size={18} color="var(--color-text-secondary)" />
+            </div>
+          </div>
+
+          {/* Security & App Lock */}
+          <div 
+            onClick={() => setActiveModal(isEnabled ? 'change' : 'setup')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--color-border)',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {isEnabled ? <ShieldCheck size={18} color="#10b981" /> : <ShieldAlert size={18} color="var(--color-text-secondary)" />}
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Security Passcode</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '12.5px', color: isEnabled ? '#10b981' : 'var(--color-text-secondary)', fontWeight: 600 }}>
+                {isEnabled ? 'Enabled' : 'Off'}
+              </span>
+              <ChevronRight size={18} color="var(--color-text-secondary)" />
+            </div>
+          </div>
+
+          {/* Language */}
+          <div 
+            onClick={() => addToast('info', 'English is the default language.')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Globe size={18} color="var(--color-text-primary)" />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Language</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>English</span>
+              <ChevronRight size={18} color="var(--color-text-secondary)" />
+            </div>
+          </div>
         </div>
       </div>
-      
-      <div className="responsive-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        
-        {/* COLUMN 1: APP LOCK & SECURITY */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <section style={{ 
-            backgroundColor: 'var(--color-bg-primary)', 
-            border: '1px solid var(--color-border)', 
-            borderRadius: '20px', 
-            padding: '24px',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ 
-                  width: '36px', 
-                  height: '36px', 
-                  borderRadius: '10px', 
-                  backgroundColor: 'var(--color-bg-secondary)', 
-                  border: '1px solid var(--color-border)',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center' 
-                }}>
-                  <Lock size={18} />
-                </div>
-                <div>
-                  <h2 style={{ fontSize: '17px', fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>App Lock</h2>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Security & PIN Protection</div>
-                </div>
-              </div>
 
-              <span style={{ 
-                padding: '4px 10px', 
-                borderRadius: '14px', 
-                fontSize: '11px', 
-                fontWeight: 700, 
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-                backgroundColor: isEnabled ? 'var(--color-bg-secondary)' : 'var(--color-bg-secondary)',
-                border: `1px solid ${isEnabled ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                color: isEnabled ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'
-              }}>
-                {isEnabled ? '● Active' : '○ Off'}
-              </span>
+      {/* 4. DATA SECTION (INSET GROUPED CARD) */}
+      <div style={{ marginBottom: '22px' }}>
+        <div style={{ 
+          fontSize: '11px', 
+          fontWeight: 700, 
+          letterSpacing: '0.8px', 
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase',
+          marginBottom: '8px',
+          marginLeft: '4px'
+        }}>
+          DATA
+        </div>
+
+        <div style={{
+          backgroundColor: 'var(--color-bg-primary)',
+          borderRadius: '16px',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-sm)',
+          overflow: 'hidden'
+        }}>
+          {/* Import / Export */}
+          <div 
+            onClick={handleImportExport}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--color-border)',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Upload size={18} color="var(--color-text-primary)" />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Import / Export</span>
+            </div>
+            <ChevronRight size={18} color="var(--color-text-secondary)" />
+          </div>
+
+          {/* Backup & Sync */}
+          <div 
+            onClick={handleBackupAndSync}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--color-border)',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <RefreshCw size={18} color="var(--color-text-primary)" />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Backup & Sync</span>
+            </div>
+            <ChevronRight size={18} color="var(--color-text-secondary)" />
+          </div>
+
+          {/* Delete Data */}
+          <div 
+            onClick={handleDeleteAllData}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Trash2 size={18} color="#ef4444" />
+              <span style={{ fontSize: '14px', fontWeight: 600, color: '#ef4444' }}>Delete Data</span>
+            </div>
+            <ChevronRight size={18} color="var(--color-text-secondary)" />
+          </div>
+        </div>
+      </div>
+
+      {/* 5. ABOUT SECTION */}
+      <div style={{ marginBottom: '22px' }}>
+        <div style={{ 
+          fontSize: '11px', 
+          fontWeight: 700, 
+          letterSpacing: '0.8px', 
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase',
+          marginBottom: '8px',
+          marginLeft: '4px'
+        }}>
+          ABOUT
+        </div>
+
+        <div style={{
+          backgroundColor: 'var(--color-bg-primary)',
+          borderRadius: '16px',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-sm)',
+          overflow: 'hidden'
+        }}>
+          <div 
+            onClick={() => addToast('info', 'NEK LEADS PWA • Talent & Operations System Edition 2026.4')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Info size={18} color="var(--color-text-primary)" />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>About NEK LEADS</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>v1.0.0</span>
+              <ChevronRight size={18} color="var(--color-text-secondary)" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PROFILE EDIT MODAL */}
+      {isProfileModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsProfileModalOpen(false)}>
+          <div
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '400px', width: '90%', padding: '20px', borderRadius: '20px' }}
+          >
+            <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '14px' }}>Edit Operator Profile</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label className="form-label">Display Name</label>
+                <input
+                  type="text"
+                  value={profile.name}
+                  onChange={e => setProfile({ ...profile, name: e.target.value })}
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="form-label">Email Address</label>
+                <input
+                  type="email"
+                  value={profile.email}
+                  onChange={e => setProfile({ ...profile, email: e.target.value })}
+                  className="input-field"
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                <button
+                  onClick={() => setIsProfileModalOpen(false)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('nek_profile_name', profile.name);
+                    localStorage.setItem('nek_profile_email', profile.email);
+                    addToast('success', 'Profile updated');
+                    setIsProfileModalOpen(false);
+                  }}
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT PREVIEW MODAL */}
+      {importStatus && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '440px', width: '90%', padding: '20px', borderRadius: '20px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '10px' }}>Review Import</h2>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
+              Found <strong>{importStatus.total}</strong> records ready to import.
+            </p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => setImportStatus(null)} 
+                className="btn btn-secondary" 
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={processImport} 
+                className="btn btn-primary" 
+                style={{ flex: 1 }}
+              >
+                Confirm Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* APP LOCK MODAL */}
+      {activeModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px', width: '90%', padding: '20px', borderRadius: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Lock size={18} />
+                <h2 style={{ fontSize: '17px', fontWeight: 800, margin: 0 }}>
+                  {activeModal === 'setup' ? 'Enable Passcode' : activeModal === 'change' ? 'Change Passcode' : 'Disable Passcode'}
+                </h2>
+              </div>
+              <button onClick={resetPinForm} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
             </div>
 
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px', lineHeight: 1.5, marginBottom: '20px' }}>
-              {isEnabled
-                ? 'App Lock is enabled. Your candidate database and payment drafts are protected by a 4-digit passcode.'
-                : 'Require a 4-digit numeric passcode to open the app and protect confidential talent and billing records.'}
-            </p>
+            {modalError && (
+              <div style={{ padding: '8px 12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '8px', fontSize: '12px', marginBottom: '12px' }}>
+                {modalError}
+              </div>
+            )}
 
-            {isEnabled ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button 
-                  className="btn btn-primary" 
-                  onClick={lockNow}
-                  style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
-                >
-                  <ShieldAlert size={16} /> Lock App Now
-                </button>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    className="btn btn-secondary" 
-                    onClick={() => { resetPinForm(); setActiveModal('change'); }}
-                    style={{ flex: 1, justifyContent: 'center' }}
-                  >
-                    Change PIN
-                  </button>
-                  <button 
-                    className="btn btn-secondary text-danger" 
-                    onClick={() => { resetPinForm(); setActiveModal('disable'); }}
-                    style={{ flex: 1, justifyContent: 'center' }}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {activeModal !== 'setup' && (
+                <div>
+                  <label className="form-label">Current 4-Digit Passcode</label>
+                  <input
+                    type="password"
+                    maxLength={4}
+                    value={pinForm.currentPin}
+                    onChange={e => setPinForm({ ...pinForm, currentPin: e.target.value.replace(/\D/g, '') })}
+                    className="input-field"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {activeModal !== 'disable' && (
+                <>
+                  <div>
+                    <label className="form-label">New 4-Digit Passcode</label>
+                    <input
+                      type="password"
+                      maxLength={4}
+                      value={pinForm.newPin}
+                      onChange={e => setPinForm({ ...pinForm, newPin: e.target.value.replace(/\D/g, '') })}
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Confirm New Passcode</label>
+                    <input
+                      type="password"
+                      maxLength={4}
+                      value={pinForm.confirmPin}
+                      onChange={e => setPinForm({ ...pinForm, confirmPin: e.target.value.replace(/\D/g, '') })}
+                      className="input-field"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                {activeModal === 'change' && (
+                  <button
+                    onClick={() => setActiveModal('disable')}
+                    className="btn btn-danger"
+                    style={{ flex: 1, fontSize: '13px' }}
                   >
                     Turn Off
                   </button>
-                </div>
-              </div>
-            ) : (
-              <button 
-                className="btn btn-primary" 
-                onClick={() => { resetPinForm(); setActiveModal('setup'); }}
-                style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
-              >
-                <KeyRound size={16} /> Set 4-Digit Passcode
-              </button>
-            )}
-          </section>
-
-          {/* DATA EXPORT CARD */}
-          <section style={{ 
-            backgroundColor: 'var(--color-bg-primary)', 
-            border: '1px solid var(--color-border)', 
-            borderRadius: '20px', 
-            padding: '24px',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ 
-                width: '36px', 
-                height: '36px', 
-                borderRadius: '10px', 
-                backgroundColor: 'var(--color-bg-secondary)', 
-                border: '1px solid var(--color-border)',
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <FileJson size={18} />
-              </div>
-              <div>
-                <h2 style={{ fontSize: '17px', fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>Data Export</h2>
-                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Portable JSON Backup</div>
-              </div>
-            </div>
-
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px', lineHeight: 1.5, marginBottom: '20px' }}>
-              Export your full contact roster, categories, and locations to an offline backup JSON file.
-            </p>
-            <button className="btn btn-secondary" onClick={handleExportJSON} style={{ width: '100%', justifyContent: 'center' }}>
-              <FileJson size={16} /> Export JSON Backup
-            </button>
-          </section>
-        </div>
-
-        {/* COLUMN 2: DATA IMPORT */}
-        <div>
-          <section style={{ 
-            backgroundColor: 'var(--color-bg-primary)', 
-            border: '1px solid var(--color-border)', 
-            borderRadius: '20px', 
-            padding: '24px',
-            boxShadow: 'var(--shadow-sm)',
-            height: '100%',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ 
-                width: '36px', 
-                height: '36px', 
-                borderRadius: '10px', 
-                backgroundColor: 'var(--color-bg-secondary)', 
-                border: '1px solid var(--color-border)',
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <Upload size={18} />
-              </div>
-              <div>
-                <h2 style={{ fontSize: '17px', fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>Data Import</h2>
-                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Excel / CSV / JSON Spreadsheet</div>
-              </div>
-            </div>
-
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px', lineHeight: 1.5, marginBottom: '20px' }}>
-              Bulk upload candidates and manpower lists from event organizers. Automatically skips duplicate phone numbers.
-            </p>
-
-            <div style={{ 
-              padding: '28px 20px', 
-              border: '2px dashed var(--color-border)', 
-              borderRadius: '16px', 
-              textAlign: 'center',
-              backgroundColor: 'var(--color-bg-secondary)',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}>
-              <Upload size={32} style={{ marginBottom: '12px', color: 'var(--color-text-secondary)' }} />
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                Select Excel or CSV Spreadsheet
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
-                Formats supported: .xlsx, .csv, .json
-              </div>
-              <input 
-                type="file" 
-                accept=".xlsx,.xls,.csv,.json" 
-                style={{ display: 'none' }} 
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-              />
-              <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
-                Browse File
-              </button>
-            </div>
-
-            {importStatus && (
-              <div style={{ marginTop: '16px', padding: '16px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: '12px' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>Import Preview</div>
-                <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                  Total rows detected: <strong>{importStatus.total}</strong>
-                </div>
-                <button className="btn btn-primary" style={{ width: '100%', marginTop: '12px', justifyContent: 'center' }} onClick={processImport}>
-                  Proceed with Import
+                )}
+                <button
+                  onClick={activeModal === 'setup' ? handleEnableLock : activeModal === 'change' ? handleChangePin : handleDisableLock}
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                >
+                  {activeModal === 'setup' ? 'Enable' : activeModal === 'change' ? 'Update' : 'Disable'}
                 </button>
               </div>
-            )}
-          </section>
-        </div>
-
-      </div>
-
-      {/* SETUP PASSCODE MODAL */}
-      {activeModal === 'setup' && (
-        <div 
-          className="modal-overlay" 
-          onClick={(e) => { if (e.target === e.currentTarget) resetPinForm(); }}
-        >
-          <div className="modal-content" style={{ maxWidth: '380px' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldCheck size={20} />
-                <h2 style={{ fontSize: '18px', fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>Set Passcode</h2>
-              </div>
-              <button onClick={resetPinForm} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
-              Choose a 4-digit numeric passcode to secure your app.
-            </p>
-
-            <div className="form-group">
-              <label className="form-label">4-Digit Passcode</label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                autoFocus
-                className="input-field"
-                placeholder="••••"
-                value={pinForm.newPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setPinForm({ ...pinForm, newPin: val });
-                }}
-                style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '12px', fontFamily: 'monospace' }}
-              />
-            </div>
-
-            <div className="form-group" style={{ marginBottom: 20 }}>
-              <label className="form-label">Confirm Passcode</label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                className="input-field"
-                placeholder="••••"
-                value={pinForm.confirmPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setPinForm({ ...pinForm, confirmPin: val });
-                }}
-                style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '12px', fontFamily: 'monospace' }}
-              />
-            </div>
-
-            {modalError && (
-              <div style={{ color: 'var(--color-danger)', fontSize: '12px', fontWeight: 600, marginBottom: '16px', textAlign: 'center' }}>
-                {modalError}
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={resetPinForm}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleEnableLock}>
-                Save & Enable
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* CHANGE PASSCODE MODAL */}
-      {activeModal === 'change' && (
-        <div 
-          className="modal-overlay" 
-          onClick={(e) => { if (e.target === e.currentTarget) resetPinForm(); }}
-        >
-          <div className="modal-content" style={{ maxWidth: '380px' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <KeyRound size={20} />
-                <h2 style={{ fontSize: '18px', fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>Change Passcode</h2>
-              </div>
-              <button onClick={resetPinForm} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Current Passcode</label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                autoFocus
-                className="input-field"
-                placeholder="••••"
-                value={pinForm.currentPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setPinForm({ ...pinForm, currentPin: val });
-                }}
-                style={{ textAlign: 'center', fontSize: '22px', letterSpacing: '10px', fontFamily: 'monospace' }}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">New 4-Digit Passcode</label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                className="input-field"
-                placeholder="••••"
-                value={pinForm.newPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setPinForm({ ...pinForm, newPin: val });
-                }}
-                style={{ textAlign: 'center', fontSize: '22px', letterSpacing: '10px', fontFamily: 'monospace' }}
-              />
-            </div>
-
-            <div className="form-group" style={{ marginBottom: 20 }}>
-              <label className="form-label">Confirm New Passcode</label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                className="input-field"
-                placeholder="••••"
-                value={pinForm.confirmPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setPinForm({ ...pinForm, confirmPin: val });
-                }}
-                style={{ textAlign: 'center', fontSize: '22px', letterSpacing: '10px', fontFamily: 'monospace' }}
-              />
-            </div>
-
-            {modalError && (
-              <div style={{ color: 'var(--color-danger)', fontSize: '12px', fontWeight: 600, marginBottom: '16px', textAlign: 'center' }}>
-                {modalError}
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={resetPinForm}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleChangePin}>
-                Update Passcode
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* DISABLE PASSCODE MODAL */}
-      {activeModal === 'disable' && (
-        <div 
-          className="modal-overlay" 
-          onClick={(e) => { if (e.target === e.currentTarget) resetPinForm(); }}
-        >
-          <div className="modal-content" style={{ maxWidth: '380px' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Lock size={20} />
-                <h2 style={{ fontSize: '18px', fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>Turn Off App Lock</h2>
-              </div>
-              <button onClick={resetPinForm} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
-              Enter your current 4-digit passcode to disable App Lock.
-            </p>
-
-            <div className="form-group" style={{ marginBottom: 20 }}>
-              <label className="form-label">Current Passcode</label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                autoFocus
-                className="input-field"
-                placeholder="••••"
-                value={pinForm.currentPin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setPinForm({ ...pinForm, currentPin: val });
-                }}
-                style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '12px', fontFamily: 'monospace' }}
-              />
-            </div>
-
-            {modalError && (
-              <div style={{ color: 'var(--color-danger)', fontSize: '12px', fontWeight: 600, marginBottom: '16px', textAlign: 'center' }}>
-                {modalError}
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={resetPinForm}>
-                Cancel
-              </button>
-              <button className="btn btn-danger" style={{ flex: 1 }} onClick={handleDisableLock}>
-                Turn Off Lock
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-
