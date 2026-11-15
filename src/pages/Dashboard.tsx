@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Layers, 
   UserPlus, 
-  Briefcase, 
   Calendar, 
   Plus, 
   Upload, 
@@ -232,8 +231,13 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* 3. 2x2 METRICS STATS GRID */}
-      <div className="ecosystem-kpi-grid">
+      {/* 3. METRICS STATS ROW (TOTAL LEADS & NEW LEADS) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '12px',
+        marginBottom: '16px'
+      }}>
         {/* Total Leads */}
         <div 
           className="ecosystem-card"
@@ -276,47 +280,6 @@ export default function Dashboard() {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
             <ArrowUpRight size={13} />
             <span>+18%</span>
-          </div>
-        </div>
-
-        {/* Active Clients */}
-        <div 
-          className="ecosystem-card"
-          onClick={() => setIsCalcOpen(true)}
-          style={{ cursor: 'pointer' }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-              Active Clients
-            </span>
-            <Briefcase size={18} style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }} />
-          </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px' }}>
-            18
-          </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
-            <ArrowUpRight size={13} />
-            <span>+6%</span>
-          </div>
-        </div>
-
-        {/* Upcoming Events */}
-        <div 
-          className="ecosystem-card"
-          onClick={() => navigate('/events')}
-          style={{ cursor: 'pointer' }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-              Upcoming Events
-            </span>
-            <Calendar size={18} style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }} />
-          </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px' }}>
-            {events.length < 10 ? `0${events.length}` : events.length}
-          </div>
-          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-            Scheduled
           </div>
         </div>
       </div>
