@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Calendar, MoreHorizontal, MessageSquare, Settings, ChevronLeft, Bell } from 'lucide-react';
-import { ToastProvider, useToast } from './contexts/ToastContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { AppLockProvider } from './contexts/AppLockContext';
 import { MoreActionSheet } from './components/MoreActionSheet';
@@ -18,7 +18,6 @@ const SettingsPage = React.lazy(() => import('./pages/Settings'));
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { addToast } = useToast();
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isCalcOpen, setIsCalcOpen] = useState(false);
@@ -126,8 +125,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
           {/* Right: Notification Bell & Profile Avatar N on the EXACT same line */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button
-              onClick={() => addToast('info', 'All operational services synced and healthy.')}
+            <div
               style={{
                 position: 'relative',
                 background: 'var(--color-bg-secondary)',
@@ -138,8 +136,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--color-text-primary)',
-                cursor: 'pointer'
+                color: 'var(--color-text-primary)'
               }}
               title="Notifications"
             >
@@ -153,7 +150,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
                 borderRadius: '50%',
                 backgroundColor: '#ef4444'
               }} />
-            </button>
+            </div>
 
             <div
               onClick={() => navigate('/settings')}

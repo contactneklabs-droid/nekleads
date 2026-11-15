@@ -52,7 +52,6 @@ export default function Settings() {
   const toggleAppearance = () => {
     const next = theme === 'light' ? 'dark' : 'light';
     setTheme(next);
-    addToast('info', `Appearance set to ${next.toUpperCase()}`);
   };
 
   // App Lock Modal States
@@ -357,7 +356,6 @@ export default function Settings() {
         }}>
           {/* Notifications */}
           <div 
-            onClick={() => addToast('info', 'System notifications are active.')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -424,7 +422,6 @@ export default function Settings() {
 
           {/* Language */}
           <div 
-            onClick={() => addToast('info', 'English is the default language.')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -546,7 +543,6 @@ export default function Settings() {
           overflow: 'hidden'
         }}>
           <div 
-            onClick={() => addToast('info', 'NEK LEADS PWA • Talent & Operations System Edition 2026.4')}
             style={{
               display: 'flex',
               alignItems: 'center',
