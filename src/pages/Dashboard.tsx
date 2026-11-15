@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell,
@@ -66,6 +66,105 @@ export default function Dashboard() {
 
   const [dayName, ...restDateParts] = formattedToday.split(',');
   const restDate = restDateParts.join(',').trim();
+
+  // Dynamic computation of Leads Growth based on real candidate data and selected timeframe
+  const chartData = useMemo(() => {
+    const days = growthTimeframe === '7D' ? 7 : growthTimeframe === '30D' ? 30 : 90;
+    const now = new Date();
+    
+    // Generate 5 milestone date intervals across the selected timeframe
+    const fractions = [0, 0.25, 0.5, 0.75, 1];
+    const intervalPoints = fractions.map(fraction => {
+      const daysAgo = Math.round(days * (1 - fraction));
+      const date = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+      return { date, daysAgo, fraction };
+    });
+
+    // Format human-friendly labels dynamically (e.g. "Nov 8", "Today")
+    const labels = intervalPoints.map((pt, idx) => {
+      if (idx === intervalPoints.length - 1) return 'Today';
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric'
+      }).format(pt.date);
+    });
+
+    // Calculate real cumulative lead counts up to each date milestone
+    const counts = intervalPoints.map((pt, idx) => {
+      if (idx === intervalPoints.length - 1) return candidates.length;
+      const timeLimit = pt.date.getTime();
+      return candidates.filter(c => {
+        const created = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+        return created <= timeLimit;
+      }).length;
+    });
+
+    const currentTotal = candidates.length;
+
+    // SVG coordinates within viewBox="0 0 360 140"
+    const chartLeft = 14;
+    const chartRight = 345;
+    const chartTop = 32;
+    const chartBottom = 118;
+    const chartHeight = chartBottom - chartTop;
+
+    const maxVal = Math.max(...counts, 1);
+    const minVal = Math.min(...counts, 0);
+    const range = maxVal - minVal || 1;
+
+    const points = counts.map((count, i) => {
+      const x = chartLeft + (i / (counts.length - 1)) * (chartRight - chartLeft);
+      const normalizedY = currentTotal === 0 ? 0 : (count - minVal) / range;
+      const y = chartBottom - normalizedY * chartHeight;
+      return { x, y, count };
+    });
+
+    // Generate smooth bezier curve path
+    let areaPath = `M ${points[0].x} ${points[0].y}`;
+    let strokePath = `M ${points[0].x} ${points[0].y}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i];
+      const p1 = points[i + 1];
+      const cpx1 = p0.x + (p1.x - p0.x) * 0.5;
+      const cpy1 = p0.y;
+      const cpx2 = p0.x + (p1.x - p0.x) * 0.5;
+      const cpy2 = p1.y;
+      const segment = ` C ${cpx1.toFixed(1)} ${cpy1.toFixed(1)}, ${cpx2.toFixed(1)} ${cpy2.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+      areaPath += segment;
+      strokePath += segment;
+    }
+
+    const lastPt = points[points.length - 1];
+    areaPath += ` L ${lastPt.x} 135 L ${points[0].x} 135 Z`;
+
+    // Leads created within this window
+    const startTime = intervalPoints[0].date.getTime();
+    const newInPeriod = candidates.filter(c => {
+      const created = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+      return created >= startTime;
+    }).length;
+
+    // Growth percentage calculation
+    const initialCount = counts[0];
+    const growthPercent = initialCount > 0 
+      ? Math.round(((currentTotal - initialCount) / initialCount) * 100)
+      : currentTotal > 0 ? 100 : 0;
+
+    return {
+      days,
+      timeframeLabel: growthTimeframe === '7D' ? 'Last 7 days' : growthTimeframe === '30D' ? 'Last 30 days' : 'Last 90 days',
+      labels,
+      counts,
+      points,
+      areaPath,
+      strokePath,
+      currentTotal,
+      lastPt,
+      newInPeriod,
+      growthPercent
+    };
+  }, [candidates, growthTimeframe]);
 
   // Quick Add submit
   const handleQuickAddSubmit = () => {
@@ -291,12 +390,12 @@ export default function Dashboard() {
             </span>
             <Layers size={18} style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }} />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px' }}>
-            {candidates.length || 248}
+          <div style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px', fontFamily: "var(--font-display)" }}>
+            {candidates.length}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
             <ArrowUpRight size={13} />
-            <span>+12%</span>
+            <span>+{chartData.growthPercent}%</span>
           </div>
         </div>
 
@@ -315,12 +414,11 @@ export default function Dashboard() {
             </span>
             <UserPlus size={18} style={{ color: 'var(--color-text-secondary)', opacity: 0.8 }} />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px' }}>
-            32
+          <div style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 4px 0', letterSpacing: '-0.5px', fontFamily: "var(--font-display)" }}>
+            {chartData.newInPeriod}
           </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
-            <ArrowUpRight size={13} />
-            <span>+18%</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
+            <span>{growthTimeframe} window</span>
           </div>
         </div>
       </div>
@@ -333,7 +431,7 @@ export default function Dashboard() {
               Leads Growth
             </h2>
             <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-              Last 30 days
+              {chartData.timeframeLabel}
             </span>
           </div>
 
@@ -341,6 +439,7 @@ export default function Dashboard() {
             {(['7D', '30D', '90D'] as const).map(pill => (
               <button
                 key={pill}
+                type="button"
                 onClick={() => setGrowthTimeframe(pill)}
                 style={{
                   border: 'none',
@@ -350,7 +449,8 @@ export default function Dashboard() {
                   fontWeight: 700,
                   padding: '4px 10px',
                   borderRadius: '7px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s ease, color 0.15s ease'
                 }}
               >
                 {pill}
@@ -377,22 +477,13 @@ export default function Dashboard() {
 
             {/* Area Fill */}
             <path
-              d="M 10 120 
-                 C 40 118, 60 112, 90 102 
-                 C 120 92, 140 96, 170 82 
-                 C 200 68, 220 72, 250 54 
-                 C 280 40, 310 46, 345 28 
-                 L 345 135 L 10 135 Z"
+              d={chartData.areaPath}
               fill="url(#growthAreaGrad)"
             />
 
             {/* Top Smooth Curve Stroke */}
             <path
-              d="M 10 120 
-                 C 40 118, 60 112, 90 102 
-                 C 120 92, 140 96, 170 82 
-                 C 200 68, 220 72, 250 54 
-                 C 280 40, 310 46, 345 28"
+              d={chartData.strokePath}
               fill="none"
               stroke="var(--color-text-primary)"
               strokeWidth="2.5"
@@ -400,14 +491,14 @@ export default function Dashboard() {
             />
 
             {/* Current End Marker Dot */}
-            <circle cx="345" cy="28" r="4.5" fill="var(--color-text-primary)" />
-            <circle cx="345" cy="28" r="7.5" fill="none" stroke="var(--color-text-primary)" strokeWidth="1.5" opacity="0.4" />
+            <circle cx={chartData.lastPt.x} cy={chartData.lastPt.y} r="4.5" fill="var(--color-text-primary)" />
+            <circle cx={chartData.lastPt.x} cy={chartData.lastPt.y} r="7.5" fill="none" stroke="var(--color-text-primary)" strokeWidth="1.5" opacity="0.4" />
           </svg>
 
-          {/* Interactive Floating Pill Tooltip */}
+          {/* Real Dynamic Floating Pill Tooltip */}
           <div style={{
             position: 'absolute',
-            top: '4px',
+            top: `${Math.max(6, Math.min(100, chartData.lastPt.y - 24))}px`,
             right: '8px',
             backgroundColor: 'var(--color-primary)',
             color: 'var(--color-bg-primary)',
@@ -416,19 +507,18 @@ export default function Dashboard() {
             padding: '3px 8px',
             borderRadius: '6px',
             boxShadow: 'var(--shadow-sm)',
-            letterSpacing: '0.3px'
+            letterSpacing: '0.3px',
+            transition: 'top 0.2s ease'
           }}>
-            {candidates.length || 248} Leads
+            {chartData.currentTotal} {chartData.currentTotal === 1 ? 'Lead' : 'Leads'}
           </div>
         </div>
 
-        {/* Date Labels under chart */}
+        {/* Dynamic Real Date Labels under chart */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--color-text-secondary)', marginTop: '4px', padding: '0 4px' }}>
-          <span>Oct 16</span>
-          <span>Oct 24</span>
-          <span>Nov 01</span>
-          <span>Nov 09</span>
-          <span>Today</span>
+          {chartData.labels.map((lbl, idx) => (
+            <span key={idx}>{lbl}</span>
+          ))}
         </div>
       </div>
 
