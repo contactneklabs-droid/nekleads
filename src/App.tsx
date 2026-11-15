@@ -87,8 +87,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            height: 'calc(48px + env(safe-area-inset-top))',
-            paddingTop: 'env(safe-area-inset-top)',
+            height: 'calc(52px + env(safe-area-inset-top, 20px))',
+            paddingTop: 'calc(env(safe-area-inset-top, 20px) + 6px)',
             paddingLeft: '16px',
             paddingRight: '16px',
             background: 'transparent',
@@ -169,7 +169,13 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           </header>
         )}
 
-        <div className="page-content" style={{ paddingBottom: isSettings ? 'calc(24px + env(safe-area-inset-bottom))' : 'calc(72px + env(safe-area-inset-bottom))' }}>
+        <div 
+          className="page-content" 
+          style={{ 
+            paddingTop: isDashboard ? 'calc(env(safe-area-inset-top, 24px) + 20px)' : undefined,
+            paddingBottom: isSettings ? 'calc(24px + env(safe-area-inset-bottom))' : 'calc(72px + env(safe-area-inset-bottom))' 
+          }}
+        >
           {children}
         </div>
       </main>

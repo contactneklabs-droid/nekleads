@@ -171,7 +171,7 @@ export default function Dashboard() {
         alignItems: 'flex-start', 
         justifyContent: 'space-between', 
         marginBottom: '16px',
-        paddingTop: '2px'
+        paddingTop: '6px'
       }}>
         <div>
           {/* 1. Date Kicker: Bold Day + Light Date with Space Grotesk */}
