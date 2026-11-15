@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-  FileText, 
-  Layers, 
-  Send, 
-  Search, 
-  SlidersHorizontal, 
-  Sparkles, 
-  Wrench, 
-  Briefcase, 
-  Clock, 
-  MoreHorizontal, 
-  Edit3, 
-  Copy, 
-  MessageCircle, 
-  Plus, 
-  X, 
-  Check, 
-  ChevronDown, 
-  Trash2, 
-  Share2, 
+import {
+  FileText,
+  Layers,
+  Send,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Wrench,
+  Briefcase,
+  Clock,
+  MoreHorizontal,
+  Edit3,
+  Copy,
+  MessageCircle,
+  Plus,
+  X,
+  Check,
+  ChevronDown,
+  Trash2,
+  Share2,
   UserCheck
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
@@ -262,8 +262,8 @@ export default function WhatsAppDrafts() {
     }
 
     if (editingDraft) {
-      const updated = drafts.map(d => 
-        d.id === editingDraft.id 
+      const updated = drafts.map(d =>
+        d.id === editingDraft.id
           ? { ...d, title: formTitle.trim(), category: formCategory, message: formMessage.trim(), updatedAt: new Date().toISOString() }
           : d
       );
@@ -442,14 +442,14 @@ export default function WhatsAppDrafts() {
 
   return (
     <div style={{ maxWidth: '820px', margin: '0 auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
-      
+
       {/* 1. SECTION TITLE & KICKER (MATCHING REFERENCE) */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', marginTop: '6px' }}>
         <div>
-          <div style={{ 
+          <div style={{
             fontFamily: "var(--font-tech, 'Space Grotesk', sans-serif)",
-            fontSize: '11px', 
-            letterSpacing: '1.8px', 
+            fontSize: '11px',
+            letterSpacing: '1.8px',
             textTransform: 'uppercase',
             color: 'var(--color-text-secondary)',
             marginBottom: '4px',
@@ -461,20 +461,20 @@ export default function WhatsAppDrafts() {
             <span style={{ opacity: 0.35 }}>/</span>
             <span style={{ fontWeight: 300, letterSpacing: '1.6px' }}>COMMUNICATION</span>
           </div>
-          <h1 style={{ 
+          <h1 style={{
             fontFamily: "var(--font-display, 'Urbanist', sans-serif)",
-            fontSize: '34px', 
-            letterSpacing: '-1.4px', 
+            fontSize: '34px',
+            letterSpacing: '-1.4px',
             lineHeight: 1.05,
             margin: '2px 0 4px 0',
             color: 'var(--color-text-primary)'
           }}>
             <span style={{ fontWeight: 900 }}>WhatsApp</span> <span style={{ fontWeight: 300, opacity: 0.88 }}>Drafts</span>
           </h1>
-          <p style={{ 
+          <p style={{
             fontFamily: "var(--font-display, 'Urbanist', sans-serif)",
-            fontSize: '14px', 
-            color: 'var(--color-text-secondary)', 
+            fontSize: '14px',
+            color: 'var(--color-text-secondary)',
             margin: 0,
             lineHeight: 1.4
           }}>
@@ -508,11 +508,11 @@ export default function WhatsAppDrafts() {
       </div>
 
       {/* 2. TOP VIEW SWITCHER: DRAFTS | TEMPLATES | SENT (MATCHING REFERENCE) */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
-        gap: '8px', 
-        marginBottom: '16px' 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '8px',
+        marginBottom: '16px'
       }}>
         <button
           type="button"
@@ -589,20 +589,20 @@ export default function WhatsAppDrafts() {
 
       {/* 3. SEARCH BAR & FILTER BUTTON (MATCHING REFERENCE) */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-        <div style={{ 
-          position: 'relative', 
-          flex: 1, 
-          display: 'flex', 
-          alignItems: 'center' 
+        <div style={{
+          position: 'relative',
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center'
         }}>
-          <Search 
-            size={17} 
-            style={{ 
-              position: 'absolute', 
-              left: '14px', 
+          <Search
+            size={17}
+            style={{
+              position: 'absolute',
+              left: '14px',
               color: 'var(--color-text-secondary)',
               pointerEvents: 'none'
-            }} 
+            }}
           />
           <input
             type="text"
@@ -657,11 +657,11 @@ export default function WhatsAppDrafts() {
       </div>
 
       {/* 4. CATEGORY HORIZONTAL PILL CHIPS (MATCHING REFERENCE) */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '8px', 
-        overflowX: 'auto', 
-        paddingBottom: '6px', 
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        overflowX: 'auto',
+        paddingBottom: '6px',
         marginBottom: '16px',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none'
@@ -706,10 +706,10 @@ export default function WhatsAppDrafts() {
       {activeTab === 'drafts' && (
         <div>
           {/* Header row: Saved Drafts (count) and Sort Selector */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: '12px',
             position: 'relative'
           }}>
@@ -737,7 +737,7 @@ export default function WhatsAppDrafts() {
 
             {/* Sort Dropdown */}
             {showSortDropdown && (
-              <div 
+              <div
                 className="dropdown-menu"
                 style={{
                   position: 'absolute',
@@ -833,9 +833,9 @@ export default function WhatsAppDrafts() {
                     {/* Middle Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ 
-                          fontSize: '14.5px', 
-                          fontWeight: 800, 
+                        <span style={{
+                          fontSize: '14.5px',
+                          fontWeight: 800,
                           color: 'var(--color-text-primary)',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -1023,7 +1023,7 @@ export default function WhatsAppDrafts() {
                     {/* Divider & Send on WhatsApp */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                       <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--color-border)', flexShrink: 0 }} />
-                      
+
                       <button
                         type="button"
                         onClick={() => handleSendPrompt(draft)}
@@ -1257,12 +1257,12 @@ export default function WhatsAppDrafts() {
 
       {/* 8. CREATE / EDIT DRAFT MODAL */}
       {isEditorOpen && (
-        <div 
-          className="modal-overlay" 
+        <div
+          className="modal-overlay"
           onClick={() => setIsEditorOpen(false)}
           style={{ zIndex: 3200 }}
         >
-          <div 
+          <div
             className="modal-content"
             onClick={e => e.stopPropagation()}
             style={{ maxWidth: '480px', width: '92%', borderRadius: '24px', padding: '22px' }}
@@ -1276,7 +1276,7 @@ export default function WhatsAppDrafts() {
                   Compose & format your crew/client message
                 </span>
               </div>
-              <button 
+              <button
                 onClick={() => setIsEditorOpen(false)}
                 className="btn btn-secondary"
                 style={{ width: '32px', height: '32px', padding: 0, borderRadius: '50%' }}
@@ -1400,12 +1400,12 @@ export default function WhatsAppDrafts() {
 
       {/* 11. MANUAL PHONE SEND MODAL (Fallback when no candidate chosen) */}
       {isManualPhoneModalOpen && (
-        <div 
-          className="modal-overlay" 
+        <div
+          className="modal-overlay"
           onClick={() => setIsManualPhoneModalOpen(false)}
           style={{ zIndex: 3300 }}
         >
-          <div 
+          <div
             className="modal-content"
             onClick={e => e.stopPropagation()}
             style={{ maxWidth: '380px', width: '90%', borderRadius: '22px', padding: '20px' }}
@@ -1421,10 +1421,10 @@ export default function WhatsAppDrafts() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <label className="form-label" style={{ margin: 0 }}>Phone Number *</label>
-                  <span style={{ 
-                    fontSize: '11px', 
+                  <span style={{
+                    fontSize: '11px',
                     fontWeight: 700,
-                    color: manualPhoneInput.length === 10 ? '#10b981' : manualPhoneInput.length > 0 ? 'var(--color-primary)' : 'var(--color-text-secondary)' 
+                    color: manualPhoneInput.length === 10 ? '#10b981' : manualPhoneInput.length > 0 ? 'var(--color-primary)' : 'var(--color-text-secondary)'
                   }}>
                     {manualPhoneInput.length}/10 digits
                   </span>
