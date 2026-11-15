@@ -4,15 +4,15 @@ import {
   Bell,
   Layers, 
   UserPlus, 
-  Calendar, 
   Plus, 
   Upload, 
   MapPin, 
   ArrowUpRight, 
   X,
-  Sparkles
+  Sparkles,
+  Calculator
 } from 'lucide-react';
-import { getCandidates, Candidate, saveCandidate, getEvents, EventItem, getActivities, ActivityItem, saveEvent, logActivity } from '../lib/db';
+import { getCandidates, Candidate, saveCandidate, getActivities, ActivityItem, logActivity } from '../lib/db';
 import { downloadInstantBackup } from '../lib/backup';
 import { useToast } from '../contexts/ToastContext';
 import { PayoutCalculatorModal } from '../components/PayoutCalculatorModal';
@@ -23,7 +23,6 @@ export default function Dashboard() {
   const { addToast } = useToast();
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [events, setEvents] = useState<EventItem[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [growthTimeframe, setGrowthTimeframe] = useState<'7D' | '30D' | '90D'>('30D');
 
@@ -31,7 +30,6 @@ export default function Dashboard() {
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [whatsAppCandidate, setWhatsAppCandidate] = useState<Candidate | null>(null);
   const [quickAddType, setQuickAddType] = useState<'talent' | 'client' | null>(null);
-  const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
   const [isAddAreaOpen, setIsAddAreaOpen] = useState(false);
   const [areaInput, setAreaInput] = useState('');
 
@@ -45,23 +43,17 @@ export default function Dashboard() {
     gender: 'Male'
   });
 
-  const [eventForm, setEventForm] = useState({
-    name: '',
-    date: new Date().toISOString().split('T')[0],
-    location: '',
-    staffRequired: '',
-    status: 'Confirmed' as EventItem['status']
-  });
-
   const loadData = () => {
     const candidateList = getCandidates();
     setCandidates(candidateList);
-    setEvents(getEvents());
     setActivities(getActivities());
   };
 
   useEffect(() => {
     loadData();
+    const handleUpdate = () => loadData();
+    window.addEventListener('nek-data-updated', handleUpdate);
+    return () => window.removeEventListener('nek-data-updated', handleUpdate);
   }, []);
 
   // Format today's date: e.g. "SUNDAY, 15 NOVEMBER 2026"
@@ -128,31 +120,6 @@ export default function Dashboard() {
   };
 
   // Event Create Submit
-  const handleCreateEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!eventForm.name.trim() || !eventForm.location.trim()) {
-      addToast('error', 'Please enter event name and location');
-      return;
-    }
-    saveEvent({
-      name: eventForm.name.trim(),
-      date: eventForm.date,
-      location: eventForm.location.trim(),
-      staffRequired: eventForm.staffRequired.trim() || 'General Crew',
-      status: eventForm.status
-    });
-    addToast('success', `Event "${eventForm.name}" created!`);
-    setIsCreateEventOpen(false);
-    setEventForm({
-      name: '',
-      date: new Date().toISOString().split('T')[0],
-      location: '',
-      staffRequired: '',
-      status: 'Confirmed'
-    });
-    loadData();
-  };
-
   // Add Area Submit
   const handleAddArea = (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,28 +129,6 @@ export default function Dashboard() {
     setAreaInput('');
     setIsAddAreaOpen(false);
     loadData();
-  };
-
-  const formatEventDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      const month = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-      const day = String(d.getDate()).padStart(2, '0');
-      return { month, day };
-    } catch {
-      return { month: 'EVT', day: '01' };
-    }
-  };
-
-  const getStatusBadge = (status: EventItem['status']) => {
-    switch (status) {
-      case 'Confirmed':
-        return { bg: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: 'rgba(16, 185, 129, 0.25)' };
-      case 'Pending':
-        return { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.25)' };
-      case 'Planning':
-        return { bg: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6', border: 'rgba(59, 130, 246, 0.25)' };
-    }
   };
 
   const formatRelativeTime = (isoStr: string) => {
@@ -235,7 +180,7 @@ export default function Dashboard() {
             color: 'var(--color-text-secondary)', 
             margin: 0 
           }}>
-            Your event operations at a glance.
+            Your lead operations at a glance.
           </p>
         </div>
 
@@ -469,13 +414,13 @@ export default function Dashboard() {
             <span>Add Lead</span>
           </div>
 
-          {/* Create Event */}
+          {/* Payout Calculator */}
           <div 
             className="quick-action-tile"
-            onClick={() => setIsCreateEventOpen(true)}
+            onClick={() => setIsCalcOpen(true)}
           >
-            <Calendar size={20} />
-            <span>Create Event</span>
+            <Calculator size={20} />
+            <span>Payout Calc</span>
           </div>
 
           {/* Add Area */}
@@ -521,7 +466,6 @@ export default function Dashboard() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                 <div className="activity-icon-bubble">
                   {act.type === 'lead' ? <UserPlus size={16} /> :
-                   act.type === 'event' ? <Calendar size={16} /> :
                    act.type === 'area' ? <MapPin size={16} /> : <Sparkles size={16} />}
                 </div>
                 <div style={{ minWidth: 0 }}>
@@ -541,87 +485,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 7. UPCOMING EVENTS */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '-0.2px' }}>
-            Upcoming Events
-          </h2>
-          <button
-            onClick={() => navigate('/events')}
-            style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }}
-          >
-            View all &rarr;
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {events.slice(0, 3).map(evt => {
-            const { month, day } = formatEventDate(evt.date);
-            const badge = getStatusBadge(evt.status);
-            return (
-              <div
-                key={evt.id}
-                onClick={() => navigate('/events')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  borderRadius: '14px',
-                  border: '1px solid var(--color-border)',
-                  cursor: 'pointer'
-                }}
-              >
-                {/* Date Badge */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minWidth: '44px',
-                  height: '46px',
-                  backgroundColor: 'var(--color-input-bg)',
-                  borderRadius: '10px',
-                  border: '1px solid var(--color-border)'
-                }}>
-                  <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--color-text-secondary)', letterSpacing: '0.4px' }}>
-                    {month}
-                  </span>
-                  <span style={{ fontSize: '16px', fontWeight: 800, lineHeight: 1 }}>
-                    {day}
-                  </span>
-                </div>
-
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {evt.name}
-                  </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                    {evt.location} &bull; {evt.staffRequired || 'Crew'}
-                  </div>
-                </div>
-
-                {/* Status Pill */}
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  padding: '3px 8px',
-                  borderRadius: '8px',
-                  backgroundColor: badge.bg,
-                  color: badge.color,
-                  border: `1px solid ${badge.border}`,
-                  whiteSpace: 'nowrap'
-                }}>
-                  {evt.status}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* QUICK ADD LEAD MODAL */}
       {quickAddType && (
@@ -735,95 +598,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* CREATE EVENT MODAL */}
-      {isCreateEventOpen && (
-        <div className="modal-overlay" onClick={() => setIsCreateEventOpen(false)}>
-          <div
-            className="modal-content"
-            onClick={e => e.stopPropagation()}
-            style={{ maxWidth: '440px', width: '90%', padding: '20px', borderRadius: '20px' }}
-          >
-            <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '16px' }}>Create New Event</h2>
-            <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label className="form-label">Event Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Corporate Summit"
-                  value={eventForm.name}
-                  onChange={e => setEventForm({ ...eventForm, name: e.target.value })}
-                  className="input-field"
-                  autoFocus
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label className="form-label">Date</label>
-                  <input
-                    type="date"
-                    value={eventForm.date}
-                    onChange={e => setEventForm({ ...eventForm, date: e.target.value })}
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Status</label>
-                  <select
-                    value={eventForm.status}
-                    onChange={e => setEventForm({ ...eventForm, status: e.target.value as EventItem['status'] })}
-                    className="input-field"
-                  >
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Planning">Planning</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="form-label">Venue / Location</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Whitefield, Bangalore"
-                  value={eventForm.location}
-                  onChange={e => setEventForm({ ...eventForm, location: e.target.value })}
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label className="form-label">Staffing Requirement</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 2 Hostess · 4 Volunteers"
-                  value={eventForm.staffRequired}
-                  onChange={e => setEventForm({ ...eventForm, staffRequired: e.target.value })}
-                  className="input-field"
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateEventOpen(false)}
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{ flex: 1 }}
-                >
-                  Save Event
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ADD AREA MODAL */}
       {isAddAreaOpen && (

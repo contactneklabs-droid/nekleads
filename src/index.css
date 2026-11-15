@@ -622,48 +622,106 @@ body.modal-open .modal-overlay {
     padding-bottom: 0;
   }
 
-  .bottom-nav {
-    display: flex;
+  /* Monochrome Floating Navigation Dock (Matching Reference Image) */
+  .monochrome-floating-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: calc(70px + env(safe-area-inset-bottom));
-    background-color: var(--color-bg-secondary-glass);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid var(--color-border);
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 2000;
-    padding-bottom: env(safe-area-inset-bottom);
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
-  .bottom-nav-link {
-    flex: 1;
+  .dock-container {
+    position: relative;
+    width: 260px;
+    height: 56px;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.12)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.05));
+  }
+
+  .dock-svg-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 56px;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .dock-path {
+    fill: var(--color-bg-primary);
+    stroke: var(--color-border);
+    stroke-width: 1px;
+    transition: fill 0.2s ease, stroke 0.2s ease;
+  }
+
+  /* Base Dock Button */
+  .dock-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    color: var(--color-text-secondary);
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
     text-decoration: none;
-    transition: color 0.15s;
+    transition: transform 0.15s cubic-bezier(0.32, 0.72, 0, 1), color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  .bottom-nav-link.active {
+  .dock-btn:active {
+    transform: scale(0.88);
+  }
+
+  /* 1. Left Home Button */
+  .dock-home-btn {
+    position: absolute;
+    left: 20px;
+    top: 6px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--color-text-secondary);
+  }
+
+  .dock-home-btn.active {
     color: var(--color-primary);
   }
 
-  .bottom-nav-link svg {
-    margin-bottom: 2px;
-    transition: transform 0.1s cubic-bezier(0.32, 0.72, 0, 1);
+  /* 2. Middle Quick Add Button (+) */
+  .dock-plus-btn {
+    position: absolute;
+    left: 104px;
+    top: 6px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--color-primary);
   }
 
-  .bottom-nav-link:active svg {
-    transform: scale(0.82);
+  /* 3. Right Elevated User/People Circular Button (Resting in notched cradle) */
+  .dock-user-btn {
+    position: absolute;
+    left: 192px;
+    top: -10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--color-bg-primary);
+    border: 2px solid var(--color-bg-primary);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+    color: var(--color-text-secondary);
+    z-index: 2;
+  }
+
+  .dock-user-btn.active {
+    color: var(--color-primary);
+  }
+
+  .dock-user-btn:active {
+    transform: scale(0.92);
   }
 
   .topbar {

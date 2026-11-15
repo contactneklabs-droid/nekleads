@@ -234,7 +234,7 @@ export default function Settings() {
   const handleDeleteAllData = async () => {
     const ok = await confirm({
       title: 'Delete All Data?',
-      description: 'This will permanently erase all locally stored candidates, events, and drafts from this device. Download a backup first!',
+      description: 'This will permanently erase all locally stored candidates and drafts from this device. Download a backup first!',
       confirmLabel: 'Erase Everything',
       destructive: true
     });

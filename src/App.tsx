@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, MoreHorizontal, MessageSquare, Settings, ChevronLeft, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, Settings, ChevronLeft, Bell } from 'lucide-react';
 import { ToastProvider } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { AppLockProvider } from './contexts/AppLockContext';
 import { MoreActionSheet } from './components/MoreActionSheet';
 import { PayoutCalculatorModal } from './components/PayoutCalculatorModal';
+import { FloatingMonochromeNav } from './components/FloatingMonochromeNav';
+import { QuickAddLeadModal } from './components/QuickAddLeadModal';
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const People = React.lazy(() => import('./pages/People'));
 const Volunteers = React.lazy(() => import('./pages/Volunteers'));
 const Manpower = React.lazy(() => import('./pages/Manpower'));
-const Events = React.lazy(() => import('./pages/Events'));
 const WhatsAppDrafts = React.lazy(() => import('./pages/WhatsAppDrafts'));
 const SettingsPage = React.lazy(() => import('./pages/Settings'));
 
@@ -21,6 +22,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isCalcOpen, setIsCalcOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
   // iOS Native Edge-Swipe Back Gesture
   const touchStartRef = React.useRef<{ x: number; y: number; isEdge: boolean } | null>(null);
@@ -68,10 +70,6 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             <NavLink to="/people" className={({isActive}) => `nav-link ${isActive || location.pathname === '/volunteers' ? 'active' : ''}`}>
               <Users size={20} />
               People
-            </NavLink>
-            <NavLink to="/events" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Calendar size={20} />
-              Events
             </NavLink>
             <NavLink to="/whatsapp-drafts" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
               <MessageSquare size={20} />
@@ -180,29 +178,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation: 4 Core Ecosystem Hubs */}
-      <nav className="bottom-nav mobile-only">
-        <NavLink to="/dashboard" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
-          <LayoutDashboard size={20} />
-          <span>Home</span>
-        </NavLink>
-        <NavLink to="/people" className={({isActive}) => `bottom-nav-link ${isActive || location.pathname === '/volunteers' ? 'active' : ''}`}>
-          <Users size={20} />
-          <span>People</span>
-        </NavLink>
-        <NavLink to="/events" className={({isActive}) => `bottom-nav-link ${isActive ? 'active' : ''}`}>
-          <Calendar size={20} />
-          <span>Events</span>
-        </NavLink>
-        <button 
-          onClick={() => setIsMoreOpen(true)}
-          className={`bottom-nav-link ${isMoreOpen ? 'active' : ''}`}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-        >
-          <MoreHorizontal size={20} />
-          <span>More</span>
-        </button>
-      </nav>
+      {/* Mobile Floating Monochrome Navigation Dock (Matching Reference Image) */}
+      <FloatingMonochromeNav onOpenQuickAdd={() => setIsQuickAddOpen(true)} />
+
+      {/* Quick Add Lead Modal (Global access from center + button) */}
+      <QuickAddLeadModal
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+      />
 
       {/* Slide-Up More Actions Hub */}
       <MoreActionSheet
@@ -291,7 +274,6 @@ const App = () => {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/people" element={<People />} />
                   <Route path="/volunteers" element={<Volunteers />} />
-                  <Route path="/events" element={<Events />} />
                   <Route path="/manpower" element={<Manpower />} />
                   <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
                   <Route path="/settings" element={<SettingsPage />} />

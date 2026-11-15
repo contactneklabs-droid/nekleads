@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Calculator, Download, Settings, X, ChevronRight, Calendar } from 'lucide-react';
+import { MessageSquare, Calculator, Download, Settings, X, ChevronRight } from 'lucide-react';
 import { downloadInstantBackup } from '../lib/backup';
 import { useToast } from '../contexts/ToastContext';
 
@@ -137,43 +137,6 @@ export const MoreActionSheet: React.FC<MoreActionSheetProps> = ({
                 <div style={{ fontSize: '14.5px', fontWeight: 700 }}>Payout & Margin Calculator</div>
                 <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
                   Calculate client margins and team payout splits
-                </div>
-              </div>
-            </div>
-            <ChevronRight size={18} color="var(--color-text-secondary)" />
-          </div>
-
-          {/* Events Hub */}
-          <div
-            onClick={() => handleNavigate('/events')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 16px',
-              backgroundColor: 'var(--color-bg-secondary)',
-              borderRadius: '16px',
-              border: '1px solid var(--color-border)',
-              cursor: 'pointer'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                color: '#f59e0b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Calendar size={20} />
-              </div>
-              <div>
-                <div style={{ fontSize: '14.5px', fontWeight: 700 }}>Events & Schedule</div>
-                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                  Manage upcoming corporate & private events
                 </div>
               </div>
             </div>

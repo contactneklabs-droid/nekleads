@@ -62,7 +62,12 @@ export default function People() {
   useEffect(() => {
     loadData();
     const timer = setTimeout(() => setIsLoading(false), 150);
-    return () => clearTimeout(timer);
+    const handleUpdate = () => loadData();
+    window.addEventListener('nek-data-updated', handleUpdate);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('nek-data-updated', handleUpdate);
+    };
   }, []);
 
   const getInitials = (name: string) => {
