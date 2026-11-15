@@ -23,13 +23,12 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
     return null;
   }
 
-  // Notch & Circle Horizontal Coordinates:
-  // Left Slot (Home): center = 44px, circle left = 19px (44 - 25)
-  // Right Slot (People): center = 216px, circle left = 191px (216 - 25)
-  // Default to Home if on another route like drafts or settings
+  // Notch & Circle Horizontal Coordinates (Minimized Compact Geometry):
+  // Left Slot (Home): center = 34px, circle left = 13px (34 - 21)
+  // Right Slot (People): center = 186px, circle left = 165px (186 - 21)
   const activePosition: 'home' | 'people' = isPeopleActive ? 'people' : 'home';
-  const notchX = activePosition === 'home' ? 44 : 216;
-  const circleX = activePosition === 'home' ? 19 : 191;
+  const notchX = activePosition === 'home' ? 34 : 186;
+  const circleX = activePosition === 'home' ? 13 : 165;
 
   const handleInstantBackup = () => {
     try {
@@ -139,24 +138,24 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
         </div>
       </div>
 
-      {/* 3. Floating Monochrome Navigation Bar */}
+      {/* 3. Floating Monochrome Navigation Bar (Minimized Compact Size) */}
       <nav className="monochrome-floating-nav mobile-only" aria-label="Mobile Navigation">
         <div className="dock-container">
           {/* SVG Animated Notched Pill Background */}
           <svg 
             className="dock-svg-bg" 
-            width="260" 
-            height="56" 
-            viewBox="0 0 260 56" 
+            width="220" 
+            height="48" 
+            viewBox="0 0 220 48" 
             fill="none" 
             xmlns="http://www.w3.org/2000/svg"
           >
             <defs>
               <mask id="dock-notch-mask">
                 {/* Keep full pill surface */}
-                <rect x="0" y="0" width="260" height="56" rx="28" fill="white" />
+                <rect x="0" y="0" width="220" height="48" rx="24" fill="white" />
                 
-                {/* Notch cutout group that smoothly slides horizontally between Home (44px) and People (216px) */}
+                {/* Notch cutout group that smoothly slides horizontally between Home (34px) and People (186px) */}
                 <g 
                   className="notch-sliding-cutout"
                   style={{
@@ -164,10 +163,10 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
                     transition: 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)'
                   }}
                 >
-                  <circle cx="0" cy="13" r="29" fill="black" />
+                  <circle cx="0" cy="11" r="25" fill="black" />
                   {/* Smooth concave side fillets */}
-                  <path d="M -29 0 C -29 5 -25 10 -20 11 L -20 0 Z" fill="black" />
-                  <path d="M 29 0 C 29 5 25 10 20 11 L 20 0 Z" fill="black" />
+                  <path d="M -25 0 C -25 4 -21 8 -16 9 L -16 0 Z" fill="black" />
+                  <path d="M 25 0 C 25 4 21 8 16 9 L 16 0 Z" fill="black" />
                 </g>
               </mask>
             </defs>
@@ -176,9 +175,9 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
             <rect 
               x="0.5" 
               y="0.5" 
-              width="259" 
-              height="55" 
-              rx="27.5" 
+              width="219" 
+              height="47" 
+              rx="23.5" 
               className="dock-body-rect"
               mask="url(#dock-notch-mask)"
             />
@@ -193,9 +192,9 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
             }}
           >
             {activePosition === 'home' ? (
-              <Home size={22} strokeWidth={2.4} className="dock-active-icon" />
+              <Home size={19} strokeWidth={2.4} className="dock-active-icon" />
             ) : (
-              <User size={22} strokeWidth={2.4} className="dock-active-icon" />
+              <User size={19} strokeWidth={2.4} className="dock-active-icon" />
             )}
           </div>
 
@@ -207,9 +206,8 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
             aria-label="Dashboard"
             title="Dashboard"
           >
-            {/* When not elevated, render subtle outline icon */}
             {activePosition !== 'home' && (
-              <Home size={21} strokeWidth={1.8} className="dock-inactive-icon" />
+              <Home size={18} strokeWidth={1.8} className="dock-inactive-icon" />
             )}
           </button>
 
@@ -222,7 +220,7 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
             title="Quick Actions"
           >
             <div className="dock-plus-icon-wrapper">
-              <Plus size={24} strokeWidth={2.3} />
+              <Plus size={21} strokeWidth={2.3} />
             </div>
           </button>
 
@@ -234,9 +232,8 @@ export function FloatingMonochromeNav({ onOpenQuickAdd }: FloatingMonochromeNavP
             aria-label="People & Leads"
             title="People Directory"
           >
-            {/* When not elevated, render subtle outline icon */}
             {activePosition !== 'people' && (
-              <User size={21} strokeWidth={1.8} className="dock-inactive-icon" />
+              <User size={18} strokeWidth={1.8} className="dock-inactive-icon" />
             )}
           </button>
         </div>

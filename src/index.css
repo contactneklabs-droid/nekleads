@@ -617,11 +617,11 @@ body.modal-open .modal-overlay {
   }
 
   /* ==========================================================================
-     MONOCHROME FLOATING NAVIGATION DOCK & SPRING NOTCH SYSTEM
+     MONOCHROME FLOATING NAVIGATION DOCK & SPRING NOTCH SYSTEM (MINIMIZED)
      ========================================================================== */
   .monochrome-floating-nav {
     position: fixed;
-    bottom: calc(18px + env(safe-area-inset-bottom));
+    bottom: calc(16px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     z-index: 2000;
@@ -632,17 +632,17 @@ body.modal-open .modal-overlay {
 
   .dock-container {
     position: relative;
-    width: 260px;
-    height: 56px;
-    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.12)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.05));
+    width: 220px;
+    height: 48px;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.11)) drop-shadow(0 2px 5px rgba(0, 0, 0, 0.04));
   }
 
   .dock-svg-bg {
     position: absolute;
     top: 0;
     left: 0;
-    width: 260px;
-    height: 56px;
+    width: 220px;
+    height: 48px;
     pointer-events: none;
     overflow: visible;
   }
@@ -654,16 +654,16 @@ body.modal-open .modal-overlay {
     transition: fill 0.25s ease, stroke 0.25s ease;
   }
 
-  /* Elevated Circular Active Bubble (Slides smoothly between Home & People with spring physics) */
+  /* Elevated Circular Active Bubble (Minimized 42px) */
   .dock-elevated-circle-bubble {
     position: absolute;
-    top: -12px;
-    width: 50px;
-    height: 50px;
+    top: -9px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background-color: var(--color-bg-primary);
     border: 2px solid var(--color-bg-primary);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.15), 0 2px 5px rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -674,7 +674,7 @@ body.modal-open .modal-overlay {
 
   .dock-active-icon {
     color: var(--color-primary);
-    transform: scale(1.04);
+    transform: scale(1.02);
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
   }
 
@@ -699,20 +699,20 @@ body.modal-open .modal-overlay {
   /* 1. Left Home Slot */
   .dock-home-slot {
     position: absolute;
-    left: 21px;
-    top: 5px;
-    width: 46px;
-    height: 46px;
+    left: 14px;
+    top: 4px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
   }
 
   /* 2. Middle Plus (+) Slot */
   .dock-plus-slot {
     position: absolute;
-    left: 107px;
-    top: 5px;
-    width: 46px;
-    height: 46px;
+    left: 90px;
+    top: 4px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     color: var(--color-primary);
   }
@@ -731,10 +731,10 @@ body.modal-open .modal-overlay {
   /* 3. Right People Slot */
   .dock-people-slot {
     position: absolute;
-    left: 193px;
-    top: 5px;
-    width: 46px;
-    height: 46px;
+    left: 166px;
+    top: 4px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
   }
 
@@ -764,9 +764,9 @@ body.modal-open .modal-overlay {
   .dock-action-popover {
     position: fixed;
     left: 50%;
-    bottom: calc(88px + env(safe-area-inset-bottom));
+    bottom: calc(76px + env(safe-area-inset-bottom));
     width: calc(100% - 32px);
-    max-width: 310px;
+    max-width: 300px;
     z-index: 2100;
     pointer-events: none;
     opacity: 0;

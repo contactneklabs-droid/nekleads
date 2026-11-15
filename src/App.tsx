@@ -174,7 +174,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           </header>
         )}
 
-        <div className="page-content" style={{ paddingBottom: isSettings ? 'calc(24px + env(safe-area-inset-bottom))' : 'calc(84px + env(safe-area-inset-bottom))' }}>
+        <div className="page-content" style={{ paddingBottom: isSettings ? 'calc(24px + env(safe-area-inset-bottom))' : 'calc(72px + env(safe-area-inset-bottom))' }}>
           {children}
         </div>
       </main>
