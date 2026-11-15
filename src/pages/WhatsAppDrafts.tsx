@@ -446,30 +446,40 @@ export default function WhatsAppDrafts() {
       {/* 1. SECTION TITLE & KICKER (MATCHING REFERENCE) */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px', marginTop: '6px' }}>
         <div>
-          <span style={{ 
+          <div style={{ 
+            fontFamily: "var(--font-tech, 'Space Grotesk', sans-serif)",
             fontSize: '11px', 
-            fontWeight: 800, 
-            letterSpacing: '0.8px', 
+            letterSpacing: '1.8px', 
+            textTransform: 'uppercase',
             color: 'var(--color-text-secondary)',
-            textTransform: 'uppercase'
+            marginBottom: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
           }}>
-            OPERATIONS / COMMUNICATION
-          </span>
+            <span style={{ fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '2px' }}>OPERATIONS</span>
+            <span style={{ opacity: 0.35 }}>/</span>
+            <span style={{ fontWeight: 300, letterSpacing: '1.6px' }}>COMMUNICATION</span>
+          </div>
           <h1 style={{ 
-            fontSize: '26px', 
-            fontWeight: 800, 
-            margin: '2px 0 2px 0', 
-            letterSpacing: '-0.5px',
+            fontFamily: "var(--font-display, 'Urbanist', sans-serif)",
+            fontSize: '34px', 
+            letterSpacing: '-1.4px', 
+            lineHeight: 1.05,
+            margin: '2px 0 4px 0',
             color: 'var(--color-text-primary)'
           }}>
-            WhatsApp Drafts
+            <span style={{ fontWeight: 900 }}>WhatsApp</span> <span style={{ fontWeight: 300, opacity: 0.88 }}>Drafts</span>
           </h1>
           <p style={{ 
-            fontSize: '13px', 
+            fontFamily: "var(--font-display, 'Urbanist', sans-serif)",
+            fontSize: '14px', 
             color: 'var(--color-text-secondary)', 
-            margin: 0 
+            margin: 0,
+            lineHeight: 1.4
           }}>
-            Create, manage and send team messages.
+            <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Create, manage</span>{' '}
+            <span style={{ fontWeight: 300 }}>and send team messages.</span>
           </p>
         </div>
 

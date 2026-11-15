@@ -273,29 +273,40 @@ export default function Settings() {
       {/* 1. HEADER */}
       <div style={{ marginBottom: '18px', paddingTop: '4px' }}>
         <div style={{ 
+          fontFamily: "var(--font-tech, 'Space Grotesk', sans-serif)",
           fontSize: '11px', 
-          fontWeight: 700, 
-          letterSpacing: '0.8px', 
+          letterSpacing: '1.8px', 
+          textTransform: 'uppercase',
           color: 'var(--color-text-secondary)',
-          textTransform: 'uppercase'
+          marginBottom: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px'
         }}>
-          ACCOUNT
+          <span style={{ fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '2px' }}>ACCOUNT</span>
+          <span style={{ opacity: 0.35 }}>/</span>
+          <span style={{ fontWeight: 300, letterSpacing: '1.6px' }}>SETTINGS</span>
         </div>
         <h1 style={{ 
-          fontSize: '28px', 
+          fontFamily: "var(--font-display, 'Urbanist', sans-serif)",
+          fontSize: '36px', 
           fontWeight: 800, 
-          letterSpacing: '-0.6px', 
-          margin: '2px 0 2px 0',
+          letterSpacing: '-1.4px', 
+          lineHeight: 1.05,
+          margin: '2px 0 4px 0',
           color: 'var(--color-text-primary)'
         }}>
           Settings
         </h1>
         <p style={{ 
-          fontSize: '13px', 
+          fontFamily: "var(--font-display, 'Urbanist', sans-serif)",
+          fontSize: '14px', 
           color: 'var(--color-text-secondary)', 
-          margin: 0 
+          margin: 0,
+          lineHeight: 1.4
         }}>
-          Manage your account, app preferences and data.
+          <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Manage</span>{' '}
+          <span style={{ fontWeight: 300 }}>your account, app preferences and data.</span>
         </p>
       </div>
 

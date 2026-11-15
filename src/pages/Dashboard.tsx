@@ -56,13 +56,16 @@ export default function Dashboard() {
     return () => window.removeEventListener('nek-data-updated', handleUpdate);
   }, []);
 
-  // Format today's date: e.g. "SUNDAY, 15 NOVEMBER 2026"
+  // Format today's date: e.g. "SUNDAY, NOVEMBER 15, 2026"
   const formattedToday = new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
-    day: 'numeric',
     month: 'long',
+    day: 'numeric',
     year: 'numeric'
   }).format(new Date()).toUpperCase();
+
+  const [dayName, ...restDateParts] = formattedToday.split(',');
+  const restDate = restDateParts.join(',').trim();
 
   // Quick Add submit
   const handleQuickAddSubmit = () => {
@@ -171,30 +174,49 @@ export default function Dashboard() {
         paddingTop: '2px'
       }}>
         <div>
+          {/* 1. Date Kicker: Bold Day + Light Date with Space Grotesk */}
           <div style={{ 
+            fontFamily: "var(--font-tech, 'Space Grotesk', sans-serif)",
             fontSize: '11px', 
-            fontWeight: 700, 
-            letterSpacing: '0.8px', 
+            letterSpacing: '1.8px', 
+            textTransform: 'uppercase',
             color: 'var(--color-text-secondary)',
-            textTransform: 'uppercase'
+            marginBottom: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
           }}>
-            {formattedToday}
+            <span style={{ fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '2px' }}>
+              {dayName}
+            </span>
+            <span style={{ opacity: 0.35 }}>•</span>
+            <span style={{ fontWeight: 300, letterSpacing: '1.6px' }}>
+              {restDate}
+            </span>
           </div>
+
+          {/* 2. Hero Title: Sculpted Geometric Display in Urbanist */}
           <h1 style={{ 
-            fontSize: '28px', 
-            fontWeight: 800, 
-            letterSpacing: '-0.6px', 
-            margin: '2px 0 2px 0',
+            fontFamily: "var(--font-display, 'Urbanist', sans-serif)",
+            fontSize: '36px', 
+            letterSpacing: '-1.4px', 
+            lineHeight: 1.05,
+            margin: '2px 0 4px 0',
             color: 'var(--color-text-primary)'
           }}>
-            Overview
+            <span style={{ fontWeight: 900 }}>Over</span><span style={{ fontWeight: 300, opacity: 0.88 }}>view</span>
           </h1>
+
+          {/* 3. Subtitle: Bold Lead + Light Ending in Urbanist */}
           <p style={{ 
-            fontSize: '13px', 
+            fontFamily: "var(--font-display, 'Urbanist', sans-serif)",
+            fontSize: '14px', 
             color: 'var(--color-text-secondary)', 
-            margin: 0 
+            margin: 0,
+            lineHeight: 1.4
           }}>
-            Your lead operations at a glance.
+            <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Your lead operations</span>{' '}
+            <span style={{ fontWeight: 300 }}>at a glance.</span>
           </p>
         </div>
 

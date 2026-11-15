@@ -54,8 +54,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Desktop Sidebar */}
       {!isDashboard && (
         <nav className="sidebar desktop-only">
-          <div className="sidebar-header" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
-            NEK LEADS
+          <div className="sidebar-header" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer', fontFamily: "var(--font-display, 'Urbanist', sans-serif)" }}>
+            <span style={{ fontWeight: 300, letterSpacing: '2.5px' }}>NEK</span>
+            <span style={{ fontWeight: 900, letterSpacing: '1px', marginLeft: '6px' }}>LEADS</span>
           </div>
           <div className="nav-links">
             <NavLink to="/dashboard" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
