@@ -11,7 +11,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { getCandidates, saveCandidate, updateCandidate, deleteCandidate, Candidate } from '../lib/db';
+import { getCandidates, saveCandidate, updateCandidate, deleteCandidate, Candidate, checkDuplicateCandidate } from '../lib/db';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { WhatsAppDirectModal } from '../components/WhatsAppDirectModal';
@@ -20,7 +20,7 @@ import { SwipeableLeadCard } from '../components/SwipeableLeadCard';
 
 export default function People() {
   const { addToast } = useToast();
-  const { confirm } = useDialog();
+  const { confirm, showAlert } = useDialog();
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [activeCategory, setActiveCategory] = useState<'All' | 'Volunteer' | 'Hostess' | 'Manpower'>('All');
@@ -155,9 +155,13 @@ export default function People() {
       return;
     }
 
-    const isDup = candidates.some(c => c.phone === cleanPhone && c.id !== editingCandidate?.id);
-    if (isDup) {
-      addToast('error', 'Phone number already registered');
+    const dupCheck = checkDuplicateCandidate(cleanPhone, form.name, editingCandidate?.id);
+    if (dupCheck.isDuplicate) {
+      showAlert({
+        title: dupCheck.title || 'Duplicate Lead Found',
+        message: dupCheck.message || 'This phone number or lead already exists in your directory.',
+        buttonText: 'OK'
+      });
       return;
     }
 
@@ -187,9 +191,13 @@ export default function People() {
       return;
     }
 
-    const isDup = candidates.some(c => c.phone === cleanPhone);
-    if (isDup) {
-      addToast('error', 'Phone number already registered');
+    const dupCheck = checkDuplicateCandidate(cleanPhone, form.name);
+    if (dupCheck.isDuplicate) {
+      showAlert({
+        title: dupCheck.title || 'Duplicate Lead Found',
+        message: dupCheck.message || 'This phone number or lead already exists in your directory.',
+        buttonText: 'OK'
+      });
       return;
     }
 

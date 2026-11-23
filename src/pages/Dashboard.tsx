@@ -12,15 +12,17 @@ import {
   Sparkles,
   Calculator
 } from 'lucide-react';
-import { getCandidates, Candidate, saveCandidate, getActivities, ActivityItem, logActivity } from '../lib/db';
+import { getCandidates, Candidate, saveCandidate, getActivities, ActivityItem, logActivity, checkDuplicateCandidate } from '../lib/db';
 import { downloadInstantBackup } from '../lib/backup';
 import { useToast } from '../contexts/ToastContext';
+import { useDialog } from '../contexts/DialogContext';
 import { PayoutCalculatorModal } from '../components/PayoutCalculatorModal';
 import { WhatsAppDirectModal } from '../components/WhatsAppDirectModal';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { showAlert } = useDialog();
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -179,9 +181,13 @@ export default function Dashboard() {
       return;
     }
 
-    const isDuplicate = candidates.some(c => c.phone === cleanPhone);
-    if (isDuplicate) {
-      addToast('error', 'Phone number already registered');
+    const dupCheck = checkDuplicateCandidate(cleanPhone, quickAddForm.name);
+    if (dupCheck.isDuplicate) {
+      showAlert({
+        title: dupCheck.title || 'Duplicate Lead Found',
+        message: dupCheck.message || 'This phone number or lead already exists in your directory.',
+        buttonText: 'OK'
+      });
       return;
     }
 
@@ -211,9 +217,13 @@ export default function Dashboard() {
       return;
     }
 
-    const isDuplicate = candidates.some(c => c.phone === cleanPhone);
-    if (isDuplicate) {
-      addToast('error', 'Phone number already registered');
+    const dupCheck = checkDuplicateCandidate(cleanPhone, quickAddForm.name);
+    if (dupCheck.isDuplicate) {
+      showAlert({
+        title: dupCheck.title || 'Duplicate Lead Found',
+        message: dupCheck.message || 'This phone number or lead already exists in your directory.',
+        buttonText: 'OK'
+      });
       return;
     }
 

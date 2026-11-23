@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, UserPlus } from 'lucide-react';
-import { saveCandidate, logActivity } from '../lib/db';
+import { saveCandidate, logActivity, checkDuplicateCandidate } from '../lib/db';
 import { useToast } from '../contexts/ToastContext';
+import { useDialog } from '../contexts/DialogContext';
 
 interface QuickAddLeadModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface QuickAddLeadModalProps {
 
 export function QuickAddLeadModal({ isOpen, onClose, defaultType = 'Volunteer' }: QuickAddLeadModalProps) {
   const { addToast } = useToast();
+  const { showAlert } = useDialog();
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -45,6 +47,16 @@ export function QuickAddLeadModal({ isOpen, onClose, defaultType = 'Volunteer' }
 
     if (cleanPhone.length !== 10) {
       addToast('error', 'Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    const dupCheck = checkDuplicateCandidate(cleanPhone, form.name);
+    if (dupCheck.isDuplicate) {
+      showAlert({
+        title: dupCheck.title || 'Duplicate Lead Found',
+        message: dupCheck.message || 'This lead already exists in your directory.',
+        buttonText: 'OK'
+      });
       return;
     }
 

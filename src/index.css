@@ -1449,5 +1449,206 @@ body.modal-open .modal-overlay {
   color: var(--color-text-primary);
 }
 
+/* ==========================================================================
+   Apple iOS Native Alert Controller Styles (PWA Lead Duplication System)
+   ========================================================================== */
+.apple-alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: appleAlertFadeIn 0.16s ease-out forwards;
+}
+
+.apple-alert-card {
+  width: 270px;
+  max-width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+  animation: appleAlertScaleIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+  user-select: none;
+  -webkit-user-select: none;
+  background: rgba(245, 245, 247, 0.88);
+  backdrop-filter: blur(35px) saturate(190%);
+  -webkit-backdrop-filter: blur(35px) saturate(190%);
+  border: 0.5px solid rgba(0, 0, 0, 0.14);
+  color: #000000;
+}
+
+html.dark-mode .apple-alert-card {
+  background: rgba(34, 34, 36, 0.88);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  .apple-alert-card {
+    background: rgba(34, 34, 36, 0.88);
+    border: 0.5px solid rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+  }
+}
+
+.apple-alert-content {
+  padding: 20px 16px 18px 16px;
+  text-align: center;
+}
+
+.apple-alert-title {
+  margin: 0 0 6px 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.4px !important;
+  line-height: 1.25 !important;
+  color: inherit;
+}
+
+.apple-alert-message {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.15px !important;
+  line-height: 1.35 !important;
+  color: rgba(60, 60, 67, 0.8);
+  word-break: break-word;
+}
+
+html.dark-mode .apple-alert-message {
+  color: rgba(235, 235, 245, 0.8);
+}
+
+@media (prefers-color-scheme: dark) {
+  .apple-alert-message {
+    color: rgba(235, 235, 245, 0.8);
+  }
+}
+
+.apple-alert-actions {
+  display: flex;
+  border-top: 0.5px solid rgba(60, 60, 67, 0.22);
+}
+
+html.dark-mode .apple-alert-actions {
+  border-top: 0.5px solid rgba(84, 84, 88, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  .apple-alert-actions {
+    border-top: 0.5px solid rgba(84, 84, 88, 0.55);
+  }
+}
+
+.apple-alert-actions-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.apple-alert-btn {
+  height: 44px;
+  padding: 0 8px;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+  font-size: 17px !important;
+  letter-spacing: -0.4px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.1s ease;
+  width: 100%;
+}
+
+.apple-alert-btn:active {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+html.dark-mode .apple-alert-btn:active {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .apple-alert-btn:active {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.apple-alert-btn-default,
+.apple-alert-btn-confirm {
+  font-weight: 600 !important;
+  color: #007AFF;
+}
+
+html.dark-mode .apple-alert-btn-default,
+html.dark-mode .apple-alert-btn-confirm {
+  color: #0A84FF;
+}
+
+@media (prefers-color-scheme: dark) {
+  .apple-alert-btn-default,
+  .apple-alert-btn-confirm {
+    color: #0A84FF;
+  }
+}
+
+.apple-alert-btn-cancel {
+  font-weight: 400 !important;
+  color: #007AFF;
+  border-right: 0.5px solid rgba(60, 60, 67, 0.22);
+}
+
+html.dark-mode .apple-alert-btn-cancel {
+  color: #0A84FF;
+  border-right: 0.5px solid rgba(84, 84, 88, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  .apple-alert-btn-cancel {
+    color: #0A84FF;
+    border-right: 0.5px solid rgba(84, 84, 88, 0.55);
+  }
+}
+
+.apple-alert-btn-destructive {
+  font-weight: 600 !important;
+  color: #FF3B30 !important;
+}
+
+html.dark-mode .apple-alert-btn-destructive {
+  color: #FF453A !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .apple-alert-btn-destructive {
+    color: #FF453A !important;
+  }
+}
+
+@keyframes appleAlertFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes appleAlertScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 
 

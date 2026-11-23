@@ -131,6 +131,53 @@ export const deleteCandidate = (id: string) => {
   pushToQueue({ type: 'DELETE', payload: { id } });
 };
 
+export const checkDuplicateCandidate = (
+  phone: string,
+  name?: string,
+  excludeId?: string
+): { isDuplicate: boolean; title?: string; message?: string; match?: Candidate } => {
+  let cleanPhone = (phone || '').replace(/\D/g, '');
+  if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+    cleanPhone = cleanPhone.slice(2);
+  } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+    cleanPhone = cleanPhone.slice(1);
+  }
+  cleanPhone = cleanPhone.slice(0, 10);
+
+  const candidates = getCandidates();
+
+  // 1. Strict duplicate check by 10-digit phone number
+  if (cleanPhone.length === 10) {
+    const existingByPhone = candidates.find(c => c.phone === cleanPhone && c.id !== excludeId);
+    if (existingByPhone) {
+      return {
+        isDuplicate: true,
+        title: 'Duplicate Lead Found',
+        message: `Phone number ${cleanPhone} is already registered to "${existingByPhone.name}" (${existingByPhone.type} · ${existingByPhone.location || 'Bangalore'}).`,
+        match: existingByPhone,
+      };
+    }
+  }
+
+  // 2. Duplicate check by full name if phone also matches or identical person exists
+  if (name && name.trim().length > 1) {
+    const cleanName = name.trim().toLowerCase();
+    const existingByName = candidates.find(
+      c => c.name.trim().toLowerCase() === cleanName && c.id !== excludeId
+    );
+    if (existingByName && existingByName.phone === cleanPhone) {
+      return {
+        isDuplicate: true,
+        title: 'Recurring Lead Found',
+        message: `"${existingByName.name}" is already present in your directory with phone number ${existingByName.phone}.`,
+        match: existingByName,
+      };
+    }
+  }
+
+  return { isDuplicate: false };
+};
+
 // Mock sync function to simulate pushing queue to Cloudflare Worker
 export const syncQueue = async () => {
   if (!navigator.onLine) return { success: false, reason: 'offline' };
