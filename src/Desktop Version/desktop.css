@@ -1,0 +1,286 @@
+/* ==========================================================================
+   NEK LEADS - DEDICATED DESKTOP VERSION STYLES
+   Matches High-End Desktop Architecture (Light & Dark Mode)
+   ========================================================================== */
+
+:root {
+  --desktop-frame-bg: #F5EFE9;
+  --desktop-card-bg: #FFFFFF;
+  --desktop-card-subtle: #FBF9F7;
+  --desktop-sidebar-bg: #FAF7F4;
+  --desktop-border: rgba(0, 0, 0, 0.07);
+  --desktop-border-hover: rgba(0, 0, 0, 0.15);
+  --desktop-text-primary: #121316;
+  --desktop-text-secondary: #585A63;
+  --desktop-text-muted: #8E919C;
+  --desktop-accent: #000000;
+  --desktop-accent-soft: rgba(0, 0, 0, 0.05);
+  --desktop-ring-color: #E24A4A;
+  --desktop-folder-gradient: linear-gradient(180deg, #A8ACB4 0%, #828791 100%);
+  --desktop-folder-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  --desktop-shadow-card: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+html.dark-mode,
+.dark-theme-desktop {
+  --desktop-frame-bg: #0D0E12;
+  --desktop-card-bg: #16171B;
+  --desktop-card-subtle: #1C1E23;
+  --desktop-sidebar-bg: #131418;
+  --desktop-border: rgba(255, 255, 255, 0.08);
+  --desktop-border-hover: rgba(255, 255, 255, 0.18);
+  --desktop-text-primary: #F3F4F6;
+  --desktop-text-secondary: #A0A3AD;
+  --desktop-text-muted: #6B707E;
+  --desktop-accent: #FFFFFF;
+  --desktop-accent-soft: rgba(255, 255, 255, 0.08);
+  --desktop-ring-color: #FF5A5A;
+  --desktop-folder-gradient: linear-gradient(180deg, #4A4E58 0%, #30333B 100%);
+  --desktop-folder-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --desktop-shadow-card: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* Outer desktop wrapper with elegant soft-tinted bezel */
+.desktop-viewport-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--desktop-frame-bg);
+  padding: 16px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+  color: var(--desktop-text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Outer browser shell pill / app bar */
+.desktop-outer-shell {
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  background-color: var(--desktop-card-bg);
+  border-radius: 20px;
+  border: 1px solid var(--desktop-border);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06);
+  display: flex;
+  overflow: hidden;
+  min-height: calc(100vh - 32px);
+  position: relative;
+}
+
+/* 3-Column Layout */
+.desktop-sidebar-pane {
+  width: 250px;
+  flex-shrink: 0;
+  background-color: var(--desktop-sidebar-bg);
+  border-right: 1px solid var(--desktop-border);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px;
+}
+
+.desktop-main-pane {
+  flex: 1;
+  background-color: var(--desktop-card-bg);
+  overflow-y: auto;
+  padding: 24px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.desktop-inspector-pane {
+  width: 290px;
+  flex-shrink: 0;
+  background-color: var(--desktop-card-bg);
+  border-left: 1px solid var(--desktop-border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px;
+  gap: 18px;
+  overflow-y: auto;
+}
+
+/* Search bar on desktop */
+.desktop-search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--desktop-card-bg);
+  border: 1px solid var(--desktop-border);
+  border-radius: 10px;
+  padding: 7px 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.desktop-search-input-wrap:focus-within {
+  border-color: var(--desktop-border-hover);
+  box-shadow: 0 0 0 2px var(--desktop-accent-soft);
+}
+
+.desktop-kbd-pill {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--desktop-text-muted);
+  background-color: var(--desktop-card-subtle);
+  border: 1px solid var(--desktop-border);
+  border-radius: 5px;
+  padding: 1px 6px;
+  letter-spacing: 0.3px;
+}
+
+/* Nav Item styling */
+.desktop-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--desktop-text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.desktop-nav-link:hover {
+  background-color: var(--desktop-card-bg);
+  color: var(--desktop-text-primary);
+}
+
+.desktop-nav-link.active {
+  background-color: var(--desktop-card-bg);
+  color: var(--desktop-text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Feature Cards Grid (Top 6 cards in reference) */
+.desktop-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .desktop-feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.desktop-grid-card {
+  background-color: var(--desktop-card-bg);
+  border: 1px solid var(--desktop-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 128px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.desktop-grid-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--desktop-border-hover);
+  box-shadow: var(--desktop-shadow-card);
+}
+
+/* Action button inside card ("Connect", "Manage", etc.) */
+.desktop-card-btn {
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--desktop-border);
+  background-color: transparent;
+  color: var(--desktop-text-primary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.desktop-card-btn:hover {
+  background-color: var(--desktop-accent-soft);
+  border-color: var(--desktop-border-hover);
+}
+
+/* Shortcut Folder Icons Row */
+.desktop-shortcuts-scroll {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.desktop-folder-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+  min-width: 82px;
+}
+
+.desktop-folder-item:hover {
+  transform: translateY(-2px);
+}
+
+.desktop-folder-icon-3d {
+  width: 58px;
+  height: 42px;
+  border-radius: 6px 10px 8px 8px;
+  background: var(--desktop-folder-gradient);
+  position: relative;
+  box-shadow: var(--desktop-folder-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-folder-icon-3d::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 5px;
+  width: 22px;
+  height: 6px;
+  background: inherit;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Bottom Analytics Row */
+.desktop-analytics-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+.desktop-analytics-card {
+  background-color: var(--desktop-card-bg);
+  border: 1px solid var(--desktop-border);
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Right Panel Activity Item */
+.desktop-activity-card {
+  border-radius: 12px;
+  border: 1px solid var(--desktop-border);
+  padding: 12px 14px;
+  background-color: var(--desktop-card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.12s ease;
+}
+
+.desktop-activity-card:hover {
+  border-color: var(--desktop-border-hover);
+}

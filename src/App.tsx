@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, MessageSquare, Settings, ChevronLeft, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, Settings, ChevronLeft, Bell, Monitor } from 'lucide-react';
 import { ToastProvider } from './contexts/ToastContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { AppLockProvider } from './contexts/AppLockContext';
@@ -11,10 +11,17 @@ import Dashboard from './pages/Dashboard';
 import People from './pages/People';
 import WhatsAppDrafts from './pages/WhatsAppDrafts';
 import SettingsPage from './pages/Settings';
+import DesktopApp from './Desktop Version/DesktopApp';
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const isDesktopView = location.pathname.startsWith('/desktop');
+
+  if (isDesktopView) {
+    return <>{children}</>;
+  }
+
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
   const isSettings = location.pathname === '/settings';
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -74,6 +81,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
             <NavLink to="/settings" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>
               <Settings size={20} />
               Settings
+            </NavLink>
+            <NavLink to="/desktop" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} style={{ marginTop: '16px', borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
+              <Monitor size={20} />
+              Desktop View
             </NavLink>
           </div>
         </nav>
@@ -266,6 +277,7 @@ const App = () => {
                 <Route path="/manpower" element={<Navigate to="/people" replace />} />
                 <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/desktop" element={<DesktopApp />} />
               </Routes>
             </AppLayout>
           </AppLockProvider>
