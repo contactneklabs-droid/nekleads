@@ -346,51 +346,51 @@ export const DesktopOverview: React.FC<DesktopOverviewProps> = ({
         <div className="desktop-shortcuts-scroll">
           <div className="desktop-folder-item" onClick={() => onNavigateTab('people', 'Volunteer')}>
             <div className="desktop-folder-icon-3d">
-              <Users size={16} color="#FFFFFF" />
+              <Users size={24} color="#FFFFFF" />
             </div>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textAlign: 'center' }}>Volunteers</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>Volunteers</span>
           </div>
 
           <div className="desktop-folder-item" onClick={() => onNavigateTab('people', 'Hostess')}>
             <div className="desktop-folder-icon-3d">
-              <Sparkles size={16} color="#FFFFFF" />
+              <Sparkles size={24} color="#FFFFFF" />
             </div>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textAlign: 'center' }}>Hostesses</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>Hostesses</span>
           </div>
 
           <div className="desktop-folder-item" onClick={() => onNavigateTab('people', 'Manpower')}>
             <div className="desktop-folder-icon-3d">
-              <Wrench size={16} color="#FFFFFF" />
+              <Wrench size={24} color="#FFFFFF" />
             </div>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textAlign: 'center' }}>Manpower</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>Manpower</span>
           </div>
 
           <div className="desktop-folder-item" onClick={() => onNavigateTab('people', 'Client')}>
             <div className="desktop-folder-icon-3d">
-              <ShieldCheck size={16} color="#FFFFFF" />
+              <ShieldCheck size={24} color="#FFFFFF" />
             </div>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textAlign: 'center' }}>Clients</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>Clients</span>
           </div>
 
           <div className="desktop-folder-item" onClick={() => onNavigateTab('drafts')}>
             <div className="desktop-folder-icon-3d">
-              <MessageSquare size={16} color="#FFFFFF" />
+              <MessageSquare size={24} color="#FFFFFF" />
             </div>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textAlign: 'center' }}>Drafts</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>Drafts</span>
           </div>
 
           <div className="desktop-folder-item" onClick={() => onNavigateTab('calculator')}>
             <div className="desktop-folder-icon-3d">
-              <Calculator size={16} color="#FFFFFF" />
+              <Calculator size={24} color="#FFFFFF" />
             </div>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textAlign: 'center' }}>Payouts</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>Payouts</span>
           </div>
 
           <div className="desktop-folder-item" onClick={() => onNavigateTab('settings')}>
             <div className="desktop-folder-icon-3d">
-              <ArrowUpDown size={16} color="#FFFFFF" />
+              <ArrowUpDown size={24} color="#FFFFFF" />
             </div>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, textAlign: 'center' }}>Backups</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>Backups</span>
           </div>
         </div>
       </div>
