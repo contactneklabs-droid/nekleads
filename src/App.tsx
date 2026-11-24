@@ -7,10 +7,10 @@ import { AppLockProvider } from './contexts/AppLockContext';
 import { FloatingMonochromeNav } from './components/FloatingMonochromeNav';
 import { QuickAddLeadModal } from './components/QuickAddLeadModal';
 
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
-const People = React.lazy(() => import('./pages/People'));
-const WhatsAppDrafts = React.lazy(() => import('./pages/WhatsAppDrafts'));
-const SettingsPage = React.lazy(() => import('./pages/Settings'));
+import Dashboard from './pages/Dashboard';
+import People from './pages/People';
+import WhatsAppDrafts from './pages/WhatsAppDrafts';
+import SettingsPage from './pages/Settings';
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -258,21 +258,15 @@ const App = () => {
         <DialogProvider>
           <AppLockProvider>
             <AppLayout>
-              <React.Suspense fallback={
-                <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-                  Loading view...
-                </div>
-              }>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/people" element={<People />} />
-                  <Route path="/volunteers" element={<Navigate to="/people" replace />} />
-                  <Route path="/manpower" element={<Navigate to="/people" replace />} />
-                  <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                </Routes>
-              </React.Suspense>
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/people" element={<People />} />
+                <Route path="/volunteers" element={<Navigate to="/people" replace />} />
+                <Route path="/manpower" element={<Navigate to="/people" replace />} />
+                <Route path="/whatsapp-drafts" element={<WhatsAppDrafts />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Routes>
             </AppLayout>
           </AppLockProvider>
         </DialogProvider>
