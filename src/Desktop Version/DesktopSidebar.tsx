@@ -7,10 +7,8 @@ import {
   Settings, 
   Sun, 
   Moon, 
-  Smartphone, 
   Plus, 
   Search,
-  ChevronRight,
   FolderOpen
 } from 'lucide-react';
 import { Candidate } from '../lib/db';
@@ -22,7 +20,6 @@ interface DesktopSidebarProps {
   setSelectedCategory: (cat: string | null) => void;
   candidates: Candidate[];
   onOpenQuickAdd: () => void;
-  onSwitchToMobile: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   searchQuery: string;
@@ -36,7 +33,6 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   setSelectedCategory,
   candidates,
   onOpenQuickAdd,
-  onSwitchToMobile,
   theme,
   toggleTheme,
   searchQuery,
@@ -260,7 +256,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
         </div>
       </div>
 
-      {/* Bottom Controls (Theme toggle & Switch to Mobile View) */}
+      {/* Bottom Controls (Theme toggle) */}
       <div style={{
         paddingTop: '12px',
         borderTop: '1px solid var(--desktop-border)',
@@ -279,18 +275,6 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           <span style={{ fontSize: '11px', color: 'var(--desktop-text-muted)' }}>
             {theme === 'dark' ? 'Dark' : 'Light'}
           </span>
-        </div>
-
-        <div 
-          className="desktop-nav-link"
-          onClick={onSwitchToMobile}
-          style={{ color: 'var(--desktop-text-muted)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Smartphone size={15} />
-            <span>Mobile / PWA View</span>
-          </div>
-          <ChevronRight size={13} />
         </div>
       </div>
     </aside>

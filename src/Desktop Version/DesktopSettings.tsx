@@ -16,8 +16,7 @@ import {
   Moon,
   Sun,
   User,
-  Database,
-  Smartphone
+  Database
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
@@ -38,15 +37,13 @@ interface DesktopSettingsProps {
   onRefreshData: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
-  onSwitchToMobile: () => void;
 }
 
 export const DesktopSettings: React.FC<DesktopSettingsProps> = ({
   candidates,
   onRefreshData,
   theme,
-  toggleTheme,
-  onSwitchToMobile
+  toggleTheme
 }) => {
   const { addToast } = useToast();
   const { confirm, showAlert } = useDialog();
@@ -229,26 +226,6 @@ export const DesktopSettings: React.FC<DesktopSettingsProps> = ({
             Manage database backups, import/export, security passcode, and workspace settings.
           </div>
         </div>
-
-        <button 
-          onClick={onSwitchToMobile}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '7px 14px',
-            borderRadius: '8px',
-            border: '1px solid var(--desktop-border)',
-            background: 'var(--desktop-card-bg)',
-            color: 'var(--desktop-text-primary)',
-            fontSize: '12px',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-        >
-          <Smartphone size={14} />
-          Switch to PWA Mobile
-        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>

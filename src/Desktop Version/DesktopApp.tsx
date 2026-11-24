@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getCandidates, getActivities, Candidate, ActivityItem } from '../lib/db';
 import { DesktopSidebar } from './DesktopSidebar';
 import { DesktopOverview } from './DesktopOverview';
@@ -13,7 +12,6 @@ import { WhatsAppDirectModal } from '../components/WhatsAppDirectModal';
 import './desktop.css';
 
 export default function DesktopApp() {
-  const navigate = useNavigate();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'people' | 'drafts' | 'calculator' | 'settings'>('overview');
@@ -83,7 +81,6 @@ export default function DesktopApp() {
           setSelectedCategory={setSelectedCategory}
           candidates={candidates}
           onOpenQuickAdd={() => setIsQuickAddOpen(true)}
-          onSwitchToMobile={() => navigate('/dashboard')}
           theme={theme}
           toggleTheme={toggleTheme}
           searchQuery={searchQuery}
@@ -125,7 +122,6 @@ export default function DesktopApp() {
             onRefreshData={loadData}
             theme={theme}
             toggleTheme={toggleTheme}
-            onSwitchToMobile={() => navigate('/dashboard')}
           />
         )}
 
