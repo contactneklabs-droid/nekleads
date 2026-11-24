@@ -18,6 +18,7 @@ export interface SwipeableLeadCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onWhatsApp: () => void;
+  onCall?: () => void;
   getInitials: (name: string) => string;
 }
 
@@ -75,8 +76,11 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
   onEdit,
   onDelete,
   onWhatsApp,
+  onCall,
   getInitials
 }) => {
+  // -136 for left swipe (Edit/Delete on right drawer)
+  // +136 for right swipe (Call/WhatsApp on left drawer)
   const [translateX, setTranslateX] = useState(isOpen ? -136 : 0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -86,7 +90,9 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setTranslateX(isOpen ? -136 : 0);
+    if (!isOpen && translateX !== 0) {
+      setTranslateX(0);
+    }
   }, [isOpen]);
 
   const clearLongPress = () => {
@@ -135,15 +141,21 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
     if (gestureDirection.current === 'horizontal') {
       const target = startTranslateX.current + diffX;
       if (target <= 0) {
+        // Swiping Left (towards edit/delete)
         if (target >= -136) {
           setTranslateX(target);
         } else {
-          // Rubber banding past -136px
+          // Rubber band past -136px
           setTranslateX(-136 + (target + 136) * 0.2);
         }
       } else {
-        // Rubber banding to right
-        setTranslateX(target * 0.2);
+        // Swiping Right (towards call/chat)
+        if (target <= 136) {
+          setTranslateX(target);
+        } else {
+          // Rubber band past 136px
+          setTranslateX(136 + (target - 136) * 0.2);
+        }
       }
     }
   };
@@ -154,8 +166,12 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
 
     if (gestureDirection.current === 'horizontal') {
       if (translateX < -60) {
-        // Snap open
+        // Snap open left swipe (reveals Edit & Delete)
         setTranslateX(-136);
+        onOpen?.();
+      } else if (translateX > 60) {
+        // Snap open right swipe (reveals Call & WhatsApp)
+        setTranslateX(136);
         onOpen?.();
       } else {
         // Snap closed
@@ -163,7 +179,7 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
         onClose?.();
       }
     } else if (gestureDirection.current === 'undecided') {
-      if (startTranslateX.current < -20) {
+      if (Math.abs(startTranslateX.current) > 20) {
         // Tapped while open -> close
         setTranslateX(0);
         onClose?.();
@@ -173,6 +189,15 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
     }
 
     gestureDirection.current = 'undecided';
+  };
+
+  const handleCall = () => {
+    if (onCall) {
+      onCall();
+    } else {
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      window.location.href = `tel:${cleanPhone}`;
+    }
   };
 
   const roleColors = getRoleColors(type);
@@ -191,7 +216,76 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
         marginBottom: '2px'
       }}
     >
-      {/* BACKGROUND ACTION DRAWER (Revealed upon swiping left) */}
+      {/* LEFT ACTION DRAWER (Revealed upon swiping right -> Call & Chat) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 0,
+          width: '136px',
+          display: 'flex',
+          zIndex: 1
+        }}
+      >
+        {/* DIRECT CALL BUTTON */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTranslateX(0);
+            onClose?.();
+            handleCall();
+          }}
+          aria-label={`Call ${name}`}
+          style={{
+            flex: 1,
+            backgroundColor: '#0284c7', // Sky / ocean blue
+            color: '#FFFFFF',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '3px',
+            cursor: 'pointer',
+            padding: 0
+          }}
+        >
+          <Phone size={17} />
+          <span style={{ fontSize: '11px', fontWeight: 700 }}>Call</span>
+        </button>
+
+        {/* CHAT / WHATSAPP BUTTON */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTranslateX(0);
+            onClose?.();
+            onWhatsApp();
+          }}
+          aria-label={`Chat with ${name}`}
+          style={{
+            flex: 1,
+            backgroundColor: '#10b981', // Emerald green
+            color: '#FFFFFF',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '3px',
+            cursor: 'pointer',
+            padding: 0
+          }}
+        >
+          <MessageCircle size={17} />
+          <span style={{ fontSize: '11px', fontWeight: 700 }}>Chat</span>
+        </button>
+      </div>
+
+      {/* RIGHT ACTION DRAWER (Revealed upon swiping left -> Edit & Delete) */}
       <div
         style={{
           position: 'absolute',
@@ -286,7 +380,7 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
           cursor: isSelectionMode ? 'pointer' : 'default'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
           {/* Avatar Circle with Role-Based Theme */}
           <div
             style={{
@@ -308,7 +402,7 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
           </div>
 
           {/* Name & Role · Location */}
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div
               style={{
                 fontSize: '14.5px',
@@ -336,67 +430,21 @@ export const SwipeableLeadCard: React.FC<SwipeableLeadCardProps> = ({
             >
               <span style={{ fontWeight: 700, color: roleColors.color }}>{type}</span>
               <span>&bull;</span>
-              <span>{location}</span>
+              <span>{location || 'Bangalore'}</span>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions: Direct Call & WhatsApp */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {phone && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.location.href = `tel:${phone}`;
-              }}
-              aria-label={`Call ${name}`}
-              style={{
-                background: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'transform 0.1s ease, background-color 0.15s ease'
-              }}
-              title={`Call ${phone}`}
-            >
-              <Phone size={16} />
-            </button>
-          )}
-
-          {/* Quick WhatsApp Action (Direct 1-tap) */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onWhatsApp();
-            }}
-            aria-label={`WhatsApp ${name}`}
-            style={{
-              background: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
-              color: '#10b981',
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'transform 0.1s ease, background-color 0.15s ease'
-            }}
-            title="Message on WhatsApp"
-          >
-            <MessageCircle size={18} />
-          </button>
+        {/* 10-digit Phone display in clean muted monospace */}
+        <div style={{
+          fontSize: '12.5px',
+          fontFamily: 'monospace',
+          fontWeight: 600,
+          color: 'var(--color-text-secondary)',
+          marginLeft: '12px',
+          flexShrink: 0
+        }}>
+          {phone.replace(/\D/g, '').slice(-10)}
         </div>
       </div>
     </div>
