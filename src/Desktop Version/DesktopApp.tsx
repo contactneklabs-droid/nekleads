@@ -5,6 +5,7 @@ import { DesktopSidebar } from './DesktopSidebar';
 import { DesktopOverview } from './DesktopOverview';
 import { DesktopPeople } from './DesktopPeople';
 import { DesktopDrafts } from './DesktopDrafts';
+import { DesktopSettings } from './DesktopSettings';
 import { DesktopRightPanel } from './DesktopRightPanel';
 import { QuickAddLeadModal } from '../components/QuickAddLeadModal';
 import { PayoutCalculatorModal } from '../components/PayoutCalculatorModal';
@@ -61,10 +62,6 @@ export default function DesktopApp() {
       setIsCalcOpen(true);
       return;
     }
-    if (tab === 'settings') {
-      navigate('/settings');
-      return;
-    }
     setActiveTab(tab);
     if (category) setSelectedCategory(category);
   };
@@ -78,8 +75,6 @@ export default function DesktopApp() {
           setActiveTab={(tab) => {
             if (tab === 'calculator') {
               setIsCalcOpen(true);
-            } else if (tab === 'settings') {
-              navigate('/settings');
             } else {
               setActiveTab(tab);
             }
@@ -122,6 +117,16 @@ export default function DesktopApp() {
 
         {activeTab === 'drafts' && (
           <DesktopDrafts candidates={candidates} />
+        )}
+
+        {activeTab === 'settings' && (
+          <DesktopSettings
+            candidates={candidates}
+            onRefreshData={loadData}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            onSwitchToMobile={() => navigate('/dashboard')}
+          />
         )}
 
         {/* 3. Right Inspector Panel */}

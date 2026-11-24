@@ -205,6 +205,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+const RootRedirect: React.FC = () => {
+  const isDesktopScreen = window.innerWidth >= 1024 && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  return <Navigate to={isDesktopScreen ? "/desktop" : "/dashboard"} replace />;
+};
+
 const App = () => {
   React.useEffect(() => {
     // 1. Editorial brand splash dismiss - instant fluid transition on mount
@@ -270,7 +275,7 @@ const App = () => {
           <AppLockProvider>
             <AppLayout>
               <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/people" element={<People />} />
                 <Route path="/volunteers" element={<Navigate to="/people" replace />} />
