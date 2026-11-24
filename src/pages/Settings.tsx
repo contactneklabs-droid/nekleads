@@ -5,6 +5,9 @@ import {
   Sun, 
   Globe, 
   Upload, 
+  FileSpreadsheet,
+  FileJson,
+  FileText,
   RefreshCw, 
   Trash2, 
   Info, 
@@ -12,21 +15,44 @@ import {
   ShieldCheck, 
   ShieldAlert, 
   X,
-  Lock
+  Lock,
+  ArrowUpDown,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import { getCandidates, saveCandidate, syncQueue } from '../lib/db';
-import { downloadInstantBackup } from '../lib/backup';
+import { exportLeadsAsJson, exportLeadsAsExcel, exportLeadsAsCsv, downloadInstantBackup } from '../lib/backup';
+
+interface ParsedLead {
+  name: string;
+  phone: string;
+  type: 'Volunteer' | 'Hostess' | 'Manpower' | 'Client';
+  location: string;
+  gender: 'Male' | 'Female';
+}
 
 export default function Settings() {
   const { addToast } = useToast();
-  const { confirm } = useDialog();
+  const { confirm, showAlert } = useDialog();
   const { isEnabled, enableLock, disableLock, changePin } = useAppLock();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importStatus, setImportStatus] = useState<any>(null);
+  const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
+  const [leadCount, setLeadCount] = useState(0);
+  const [importPreview, setImportPreview] = useState<{
+    fileName: string;
+    totalRows: number;
+    validLeads: ParsedLead[];
+    duplicateCount: number;
+    invalidCount: number;
+  } | null>(null);
+
+  useEffect(() => {
+    setLeadCount(getCandidates().length);
+  }, [isImportExportModalOpen, importPreview]);
 
   // Profile info
   const [profile, setProfile] = useState({
@@ -134,9 +160,62 @@ export default function Settings() {
     }
   };
 
-  // Import / Export
-  const handleImportExport = () => {
-    fileInputRef.current?.click();
+  // Robust field extraction helper for JSON, Excel, CSV
+  const parseRawLead = (row: any): ParsedLead | null => {
+    if (!row || typeof row !== 'object') return null;
+
+    const getVal = (...keys: string[]): string => {
+      for (const k of keys) {
+        if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+          return String(row[k]).trim();
+        }
+      }
+      const lowerRow: Record<string, any> = {};
+      for (const [rk, rv] of Object.entries(row)) {
+        lowerRow[rk.trim().toLowerCase()] = rv;
+      }
+      for (const k of keys) {
+        const lk = k.trim().toLowerCase();
+        if (lowerRow[lk] !== undefined && lowerRow[lk] !== null && String(lowerRow[lk]).trim() !== '') {
+          return String(lowerRow[lk]).trim();
+        }
+      }
+      return '';
+    };
+
+    const rawName = getVal('name', 'fullname', 'full name', 'candidate name', 'candidate', 'student name', 'person name', 'lead name', 'user', 'first name');
+    const rawPhone = getVal('phone', 'phonenumber', 'phone number', 'mobile', 'mobilenumber', 'mobile number', 'contact', 'contact number', 'whatsapp', 'cell', 'phone no', 'contact no', 'mobile no', 'number');
+    const rawType = getVal('type', 'role', 'category', 'work type', 'designation', 'position', 'crew');
+    const rawLocation = getVal('location', 'area', 'city', 'address', 'landmark', 'place');
+    const rawGender = getVal('gender', 'sex');
+
+    if (!rawName || !rawPhone) return null;
+
+    let cleanPhone = rawPhone.replace(/\D/g, '');
+    if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+      cleanPhone = cleanPhone.slice(2);
+    } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.slice(1);
+    }
+    if (cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.slice(-10);
+    }
+
+    if (cleanPhone.length !== 10) return null;
+
+    let role: 'Volunteer' | 'Hostess' | 'Manpower' | 'Client' = 'Volunteer';
+    const roleLower = rawType.toLowerCase();
+    if (roleLower.includes('hostess')) role = 'Hostess';
+    else if (roleLower.includes('manpower') || roleLower.includes('crew') || roleLower.includes('staff')) role = 'Manpower';
+    else if (roleLower.includes('client')) role = 'Client';
+
+    return {
+      name: rawName,
+      phone: cleanPhone,
+      type: role,
+      location: rawLocation || 'Bangalore',
+      gender: rawGender.toLowerCase().startsWith('f') ? 'Female' : 'Male'
+    };
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,15 +226,34 @@ export default function Settings() {
       const reader = new FileReader();
       reader.onload = (evt) => {
         try {
-          const json = JSON.parse(evt.target?.result as string);
-          setImportStatus({
-            total: Array.isArray(json) ? json.length : 0,
-            valid: 0,
-            duplicates: 0,
-            data: Array.isArray(json) ? json : []
-          });
+          const content = evt.target?.result as string;
+          const parsed = JSON.parse(content);
+          
+          let rows: any[] = [];
+          if (Array.isArray(parsed)) {
+            rows = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            if (Array.isArray(parsed.candidates)) rows = parsed.candidates;
+            else if (Array.isArray(parsed.leads)) rows = parsed.leads;
+            else if (Array.isArray(parsed.data)) rows = parsed.data;
+            else if (Array.isArray(parsed.responses)) rows = parsed.responses;
+            else if (Array.isArray(parsed.items)) rows = parsed.items;
+            else if (Array.isArray(parsed.results)) rows = parsed.results;
+            else {
+              const vals = Object.values(parsed);
+              if (vals.length > 0 && typeof vals[0] === 'object') {
+                rows = vals;
+              }
+            }
+          }
+
+          analyzeAndSetImport(rows, file.name);
         } catch {
-          addToast('error', 'Failed to parse JSON file');
+          showAlert({
+            title: 'Invalid JSON File',
+            message: 'Could not parse the selected file. Please ensure it contains valid JSON formatted data.',
+            buttonText: 'OK'
+          });
         }
       };
       reader.readAsText(file);
@@ -172,72 +270,131 @@ export default function Settings() {
         const ws = workbook.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws) as any[];
 
-        setImportStatus({
-          total: data.length,
-          valid: 0,
-          duplicates: 0,
-          data
-        });
+        analyzeAndSetImport(data, file.name);
       } catch {
-        addToast('error', 'Failed to parse file');
+        showAlert({
+          title: 'File Read Error',
+          message: 'Could not read the spreadsheet. Please make sure the Excel or CSV file is not corrupted.',
+          buttonText: 'OK'
+        });
       }
     };
     reader.readAsBinaryString(file);
   };
 
-  const processImport = async () => {
-    if (!importStatus?.data) return;
+  const analyzeAndSetImport = (rawRows: any[], fileName: string) => {
+    if (!rawRows || rawRows.length === 0) {
+      showAlert({
+        title: 'No Data Found',
+        message: 'The selected file does not contain any readable records or array data.',
+        buttonText: 'OK'
+      });
+      return;
+    }
 
-    const ok = await confirm({
-      title: 'Confirm Import',
-      description: `You are about to import ${importStatus.data.length} records. Proceed?`,
-      confirmLabel: 'Import'
-    });
+    const current = getCandidates();
+    const existingPhones = new Set(current.map(c => c.phone));
+    const seenInFile = new Set<string>();
 
-    if (ok) {
-      let imported = 0;
-      let duplicates = 0;
-      const current = getCandidates();
-      
-      for (const row of importStatus.data) {
-        const rawPhone = row.Phone || row.phone || row['Phone Number'] || row['Mobile'] || row['Contact'];
-        const name = row.Name || row.name;
-        const type = row.Type || row.type || row.Category || 'Volunteer';
-        const location = row.Location || row.location || row.Landmark || 'Unknown';
-        
-        if (!name || !rawPhone) continue;
+    const validLeads: ParsedLead[] = [];
+    let duplicateCount = 0;
+    let invalidCount = 0;
 
-        let cleanPhone = String(rawPhone).replace(/\D/g, '');
-        if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
-          cleanPhone = cleanPhone.slice(2);
-        } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
-          cleanPhone = cleanPhone.slice(1);
-        }
-
-        // Restrict strictly to 10-digit phone numbers
-        if (cleanPhone.length !== 10) continue;
-
-        const isDuplicate = current.some(c => c.phone === cleanPhone) || 
-                            importStatus.data.some((d: any) => d !== row && String(d.Phone || d.phone || d['Phone Number'] || '').replace(/\D/g, '').endsWith(cleanPhone));
-        
-        if (isDuplicate) {
-          duplicates++;
-          continue;
-        }
-
-        saveCandidate({
-          name: String(name),
-          phone: cleanPhone,
-          type: String(type),
-          location: String(location)
-        });
-        imported++;
+    for (const row of rawRows) {
+      const parsed = parseRawLead(row);
+      if (!parsed) {
+        invalidCount++;
+        continue;
       }
 
-      addToast('success', `Import completed. ${imported} imported, ${duplicates} duplicates skipped.`);
-      setImportStatus(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (existingPhones.has(parsed.phone) || seenInFile.has(parsed.phone)) {
+        duplicateCount++;
+        continue;
+      }
+
+      seenInFile.add(parsed.phone);
+      validLeads.push(parsed);
     }
+
+    setIsImportExportModalOpen(false);
+    setImportPreview({
+      fileName,
+      totalRows: rawRows.length,
+      validLeads,
+      duplicateCount,
+      invalidCount
+    });
+  };
+
+  const commitImport = () => {
+    if (!importPreview || importPreview.validLeads.length === 0) {
+      setImportPreview(null);
+      return;
+    }
+
+    let saved = 0;
+    for (const lead of importPreview.validLeads) {
+      saveCandidate({
+        name: lead.name,
+        phone: lead.phone,
+        type: lead.type,
+        location: lead.location,
+        gender: lead.gender
+      });
+      saved++;
+    }
+
+    // Notify other components & update count
+    window.dispatchEvent(new CustomEvent('nek-data-updated'));
+    setLeadCount(getCandidates().length);
+
+    showAlert({
+      title: 'Import Successful',
+      message: `Successfully added ${saved} lead${saved === 1 ? '' : 's'} to your directory.${importPreview.duplicateCount > 0 ? ` (${importPreview.duplicateCount} duplicate${importPreview.duplicateCount === 1 ? '' : 's'} skipped)` : ''}`,
+      buttonText: 'Done'
+    });
+
+    setImportPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleExportJson = () => {
+    const count = exportLeadsAsJson();
+    if (count === 0) {
+      showAlert({
+        title: 'No Leads to Export',
+        message: 'Your directory has no leads yet. Add or import leads first.',
+        buttonText: 'OK'
+      });
+      return;
+    }
+    addToast('success', `Exported ${count} leads as JSON!`);
+  };
+
+  const handleExportExcel = () => {
+    const count = exportLeadsAsExcel();
+    if (count === 0) {
+      showAlert({
+        title: 'No Leads to Export',
+        message: 'Your directory has no leads yet. Add or import leads first.',
+        buttonText: 'OK'
+      });
+      return;
+    }
+    addToast('success', `Exported ${count} leads as Excel (.xlsx)!`);
+  };
+
+  const handleExportCsv = () => {
+    const count = exportLeadsAsCsv();
+    if (count === 0) {
+      showAlert({
+        title: 'No Leads to Export',
+        message: 'Your directory has no leads yet. Add or import leads first.',
+        buttonText: 'OK'
+      });
+      return;
+    }
+    addToast('success', `Exported ${count} leads as CSV!`);
   };
 
   // Delete / Reset All Data
@@ -486,7 +643,7 @@ export default function Settings() {
         }}>
           {/* Import / Export */}
           <div 
-            onClick={handleImportExport}
+            onClick={() => setIsImportExportModalOpen(true)}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -497,10 +654,15 @@ export default function Settings() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Upload size={18} color="var(--color-text-primary)" />
-              <span style={{ fontSize: '14px', fontWeight: 600 }}>Import / Export</span>
+              <ArrowUpDown size={18} color="var(--color-text-primary)" />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Import & Export Leads</span>
             </div>
-            <ChevronRight size={18} color="var(--color-text-secondary)" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                {leadCount} leads
+              </span>
+              <ChevronRight size={18} color="var(--color-text-secondary)" />
+            </div>
           </div>
 
           {/* Backup & Sync */}
@@ -638,30 +800,303 @@ export default function Settings() {
         </div>
       )}
 
-      {/* IMPORT PREVIEW MODAL */}
-      {importStatus && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '440px', width: '90%', padding: '20px', borderRadius: '20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '10px' }}>Review Import</h2>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
-              Found <strong>{importStatus.total}</strong> records ready to import.
-            </p>
-            <div style={{ display: 'flex', gap: '8px' }}>
+      {/* IMPORT / EXPORT MAIN MODAL */}
+      {isImportExportModalOpen && (
+        <div 
+          className="modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsImportExportModalOpen(false); }}
+          style={{ zIndex: 4000 }}
+        >
+          <div 
+            className="modal-content" 
+            style={{ maxWidth: '480px', width: '92%', padding: '22px', borderRadius: '24px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <ArrowUpDown size={18} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>
+                    Import & Export
+                  </h2>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: 0 }}>
+                    {leadCount} leads in your local database
+                  </p>
+                </div>
+              </div>
               <button 
-                onClick={() => setImportStatus(null)} 
-                className="btn btn-secondary" 
-                style={{ flex: 1 }}
+                onClick={() => setIsImportExportModalOpen(false)}
+                style={{
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-secondary)'
+                }}
               >
-                Cancel
-              </button>
-              <button 
-                onClick={processImport} 
-                className="btn btn-primary" 
-                style={{ flex: 1 }}
-              >
-                Confirm Import
+                <X size={16} />
               </button>
             </div>
+
+            {/* EXPORT SECTION */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ 
+                fontSize: '11px', 
+                fontWeight: 700, 
+                letterSpacing: '0.8px', 
+                color: 'var(--color-text-secondary)', 
+                textTransform: 'uppercase',
+                display: 'block',
+                marginBottom: '10px'
+              }}>
+                Export Database ({leadCount} Leads)
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleExportJson}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '14px 8px',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '14px',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-primary)'
+                  }}
+                >
+                  <FileJson size={22} />
+                  <span style={{ fontSize: '12px', fontWeight: 700 }}>JSON</span>
+                  <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Full Backup</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '14px 8px',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '14px',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-primary)'
+                  }}
+                >
+                  <FileSpreadsheet size={22} />
+                  <span style={{ fontSize: '12px', fontWeight: 700 }}>Excel</span>
+                  <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Spreadsheet</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportCsv}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '14px 8px',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '14px',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-primary)'
+                  }}
+                >
+                  <FileText size={22} />
+                  <span style={{ fontSize: '12px', fontWeight: 700 }}>CSV</span>
+                  <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Plain Table</span>
+                </button>
+              </div>
+            </div>
+
+            {/* IMPORT SECTION */}
+            <div>
+              <label style={{ 
+                fontSize: '11px', 
+                fontWeight: 700, 
+                letterSpacing: '0.8px', 
+                color: 'var(--color-text-secondary)', 
+                textTransform: 'uppercase',
+                display: 'block',
+                marginBottom: '10px'
+              }}>
+                Import Leads
+              </label>
+
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: '1.5px dashed var(--color-border-hover)',
+                  borderRadius: '16px',
+                  padding: '24px 16px',
+                  textAlign: 'center',
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s ease'
+                }}
+              >
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--color-input-bg)',
+                  border: '1px solid var(--color-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 10px auto'
+                }}>
+                  <Upload size={20} color="var(--color-text-primary)" />
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
+                  Select File to Import
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
+                  Supports <strong>JSON</strong>, <strong>Excel (.xlsx)</strong>, or <strong>CSV</strong>
+                </div>
+                <div style={{ display: 'inline-flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px', background: 'var(--color-input-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>Google Forms JSON</span>
+                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px', background: 'var(--color-input-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>NEK Backups</span>
+                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px', background: 'var(--color-input-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>Auto-deduplication</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REVIEW IMPORT MODAL */}
+      {importPreview && (
+        <div className="modal-overlay" style={{ zIndex: 5000 }}>
+          <div className="modal-content" style={{ maxWidth: '440px', width: '92%', padding: '22px', borderRadius: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <CheckCircle2 size={18} color="var(--color-success)" />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '17px', fontWeight: 800, margin: 0 }}>Review Import</h2>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: 0, wordBreak: 'break-all' }}>
+                  {importPreview.fileName}
+                </p>
+              </div>
+            </div>
+
+            {/* Metrics cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '18px' }}>
+              <div style={{
+                padding: '12px',
+                borderRadius: '14px',
+                backgroundColor: 'rgba(56, 142, 60, 0.08)',
+                border: '1px solid rgba(56, 142, 60, 0.25)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '22px', fontWeight: 900, color: 'var(--color-success)' }}>
+                  {importPreview.validLeads.length}
+                </div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-success)' }}>
+                  Ready to Import
+                </div>
+              </div>
+
+              <div style={{
+                padding: '12px',
+                borderRadius: '14px',
+                backgroundColor: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '22px', fontWeight: 900, color: 'var(--color-text-secondary)' }}>
+                  {importPreview.duplicateCount}
+                </div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                  Duplicates Skipped
+                </div>
+              </div>
+            </div>
+
+            {importPreview.invalidCount > 0 && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                padding: '10px 12px', 
+                borderRadius: '12px', 
+                backgroundColor: 'var(--color-bg-secondary)', 
+                border: '1px solid var(--color-border)', 
+                fontSize: '12px', 
+                color: 'var(--color-text-secondary)',
+                marginBottom: '18px' 
+              }}>
+                <AlertCircle size={16} />
+                <span>{importPreview.invalidCount} incomplete row(s) missing name or valid 10-digit phone skipped.</span>
+              </div>
+            )}
+
+            {importPreview.validLeads.length === 0 ? (
+              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 12px 0' }}>
+                  No new leads found to import. All rows in this file are either already in your database or invalid.
+                </p>
+                <button
+                  onClick={() => setImportPreview(null)}
+                  className="btn btn-secondary"
+                  style={{ width: '100%' }}
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={() => setImportPreview(null)} 
+                  className="btn btn-secondary" 
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={commitImport} 
+                  className="btn btn-primary" 
+                  style={{ flex: 1.5 }}
+                >
+                  Import {importPreview.validLeads.length} Leads
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
