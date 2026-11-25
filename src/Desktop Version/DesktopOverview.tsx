@@ -34,25 +34,36 @@ export const DesktopOverview: React.FC<DesktopOverviewProps> = ({
   const clientCount = candidates.filter(c => c.type === 'Client').length;
   const totalLeads = candidates.length;
 
-  // Real 7-point curve calculations for Spline Trend Chart (matching reference)
+  // Real time 30-day cumulative timeline curve calculated directly from actual candidate registration timestamps
   const trendPoints = useMemo(() => {
-    if (totalLeads === 0) return [10, 20, 15, 30, 25, 45, 40, 60, 55, 75, 70, 90];
-    const base = Math.max(8, Math.floor(totalLeads * 0.15));
-    return [
-      Math.round(base * 0.6),
-      Math.round(base * 1.2),
-      Math.round(base * 0.8),
-      Math.round(base * 2.1),
-      Math.round(base * 1.7),
-      Math.round(base * 3.4),
-      Math.round(base * 2.9),
-      Math.round(base * 4.6),
-      Math.round(base * 4.1),
-      Math.round(base * 5.8),
-      Math.round(base * 5.2),
-      totalLeads
-    ];
-  }, [totalLeads]);
+    if (totalLeads === 0) {
+      // Clean baseline zero graph when no data registered
+      return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    }
+
+    const now = new Date();
+    // Create 12 timeline sample points across the last 30 days
+    const intervals = 12;
+    const points: number[] = [];
+
+    for (let i = 0; i < intervals; i++) {
+      // Days ago from past (30 days ago) to today (0 days ago)
+      const daysAgo = 30 - (i * (30 / (intervals - 1)));
+      const sampleDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+
+      // Count candidates created up to this sample date
+      const countUpToDate = candidates.filter(c => {
+        if (!c.createdAt) return true;
+        return new Date(c.createdAt).getTime() <= sampleDate.getTime();
+      }).length;
+
+      points.push(countUpToDate);
+    }
+
+    // Ensure the last point matches exact live total
+    points[points.length - 1] = totalLeads;
+    return points;
+  }, [candidates, totalLeads]);
 
   // Generate smooth SVG cubic Bezier path
   const svgPathData = useMemo(() => {
