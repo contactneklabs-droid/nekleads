@@ -23,15 +23,40 @@ export default function DesktopApp() {
   const [isCalcOpen, setIsCalcOpen] = useState(false);
   const [whatsAppCandidate, setWhatsAppCandidate] = useState<Candidate | null>(null);
 
-  // Theme
+  // Theme with auto OS preference detection
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('nek_theme') as 'light' | 'dark') || 'light';
+    const saved = localStorage.getItem('nek_theme') as 'light' | 'dark' | null;
+    if (saved) return saved;
+    // Auto system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
   });
+
+  // Listen to OS theme changes automatically if user hasn't overridden
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('nek_theme_manual')) {
+        const next = e.matches ? 'dark' : 'light';
+        setTheme(next);
+        if (next === 'dark') {
+          document.documentElement.classList.add('dark-mode');
+        } else {
+          document.documentElement.classList.remove('dark-mode');
+        }
+      }
+    };
+    media.addEventListener('change', handleSystemThemeChange);
+    return () => media.removeEventListener('change', handleSystemThemeChange);
+  }, []);
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => {
       const next = prev === 'light' ? 'dark' : 'light';
       localStorage.setItem('nek_theme', next);
+      localStorage.setItem('nek_theme_manual', 'true');
       if (next === 'dark') {
         document.documentElement.classList.add('dark-mode');
       } else {

@@ -288,6 +288,39 @@ table tbody tr.desktop-table-row:hover td div {
   flex-direction: column;
 }
 
+/* Responsive Desktop Layout Rules */
+@media (max-width: 1280px) {
+  .desktop-inspector-pane {
+    display: none; /* Auto-collapse right feed on compact desktop / laptops */
+  }
+}
+
+@media (max-width: 1024px) {
+  .desktop-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  .desktop-feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .desktop-sidebar-pane {
+    width: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-outer-shell {
+    flex-direction: column;
+  }
+  .desktop-sidebar-pane {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--desktop-border);
+  }
+  .desktop-feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Right Panel Activity Item */
 .desktop-activity-card {
   border-radius: 12px;
